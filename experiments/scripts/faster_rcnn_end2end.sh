@@ -29,6 +29,12 @@ case $DATASET in
     PT_DIR="pascal_voc"
     ITERS=70000
     ;;
+  slsv1)
+    TRAIN_IMDB="slsv1_train"
+    TEST_IMDB="slsv1_test"
+    PT_DIR="slsv1"
+     ITERS=140000
+    ;;
   coco)
     # This is a very long and slow training schedule
     # You can probably use fewer iterations and reduce the
@@ -53,7 +59,7 @@ time python ./tools/train_net.py --device ${DEV} --device_id ${DEV_ID} \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
   --cfg experiments/cfgs/faster_rcnn_end2end.yml \
-  --network VGGnet_train \
+  --network VGGnetslsv1_train \
   ${EXTRA_ARGS}
 
 set +x
@@ -64,5 +70,5 @@ time python ./tools/test_net.py --device ${DEV} --device_id ${DEV_ID} \
   --weights ${NET_FINAL} \
   --imdb ${TEST_IMDB} \
   --cfg experiments/cfgs/faster_rcnn_end2end.yml \
-  --network VGGnet_test \
+  --network VGGnetslsv1_test \
   ${EXTRA_ARGS}

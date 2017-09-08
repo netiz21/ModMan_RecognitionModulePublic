@@ -9,11 +9,17 @@
 
 __sets = {}
 
-import datasets.pascal_voc
-import datasets.imagenet3d
-import datasets.kitti
-import datasets.kitti_tracking
 import numpy as np
+
+from .pascal_voc import pascal_voc
+from .imagenet3d import imagenet3d
+from .kitti import kitti
+from .slsv1 import slsv1
+from .kitti_tracking import kitti_tracking
+from .nthu import nthu
+# from .coco import coco
+# from .kittivoc import kittivoc
+
 
 def _selective_search_IJCV_top_k(split, year, top_k):
     """Return an imdb that uses the top k proposals from the selective search
@@ -49,12 +55,18 @@ for year in ['2007']:
         __sets[name] = (lambda split=split, year=year:
                 datasets.pascal_voc(split, year))
 
-# KITTI dataset
-for split in ['train', 'val', 'trainval', 'test']:
-    name = 'kitti_{}'.format(split)
+# Set up slsv1
+for split in ['train', 'test']:
+    name = 'slsv1_{}'.format(split)
     print name
-    __sets[name] = (lambda split=split:
-            datasets.kitti(split))
+    __sets[name] = (lambda split=split: slsv1(split))
+
+# # KITTI dataset
+# for split in ['train', 'val', 'trainval', 'test']:
+#     name = 'kitti_{}'.format(split)
+#     print name
+#     __sets[name] = (lambda split=split:
+#             datasets.kitti(split))
 
 # Set up coco_2014_<split>
 for year in ['2014']:
