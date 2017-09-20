@@ -1,3 +1,6 @@
+# coding=utf-8
+# #!/usr/bin/env python
+
 import os
 from xml.etree.ElementTree import Element, dump, SubElement, ElementTree
 
@@ -11,7 +14,7 @@ def list_files(path, ext):
 
 
 # read all txt file
-strPathRoot = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/Synthetic Test SceneV2(3rd yr)/TestSet/Duet'
+strPathRoot = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/test_set'
 
 listTxt = list_files(strPathRoot, 'txt')
 

@@ -123,16 +123,21 @@ def main():
            'expo', 'champion', 'orange', 'apple', 'cup',
            'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup',
            'drill', 'mustard', 'waffle', 'ace', 'airplane',
-           'moncher', 'cheezit', 'chococo', 'sponge'
+           'moncher', 'cheezit', 'chococo'# , 'sponge'
     ]
 
     TH_range = np.arange(0., 1.025, 0.025)
     confMat = np.zeros((len(TH_range), len(listObject), 3), dtype = np.int)
 
-    strImageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/Synthetic Test SceneV2(3rd yr)/TestSet/Total200/Images/'       # read this image files and make a file list
-    strEstFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/Synthetic Test SceneV2(3rd yr)/TestSet/Total200/estResult/'      # check this your answer
-    strGndFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/Synthetic Test SceneV2(3rd yr)/TestSet/Total200/Annotations/'    # compare with this groundtruth
-    listTestFiles = list_files(strImageFolder, 'jpg')
+    strImageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/test_set/'       # read this image files and make a file list
+    strEstFolder = '/home/yochin/Desktop/ModManAPP_TF/EstResult/RealSolo_SynthDual/'      # check this your answer
+    strGndFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/test_set/Annotations/xml/'    # compare with this groundtruth
+
+    listTestFiles1 = list_files(strImageFolder, 'bmp')
+    listTestFiles2 = list_files(strImageFolder, 'jpg')
+    listTestFiles = []
+    listTestFiles.extend(listTestFiles1)
+    listTestFiles.extend(listTestFiles2)
 
     for iTH, TH in enumerate(TH_range):
         TH = TH * 0.01
