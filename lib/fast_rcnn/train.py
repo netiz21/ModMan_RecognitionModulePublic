@@ -21,17 +21,18 @@ import time
 
 class SolverWrapper(object):
     """A simple wrapper around Caffe's solver.
-    This wrapper gives us control over he snapshotting process, which we
+    This wrapper gives us control over the snapshotting process, which we
     use to unnormalize the learned bounding-box regression weights.
     """
 
-    def __init__(self, sess, saver, network, imdb, roidb, output_dir, pretrained_model=None):
+    def __init__(self, sess, saver, network, imdb, roidb, output_dir, pretrained_model=None, resume_from_latest_ckpt=None):
         """Initialize the SolverWrapper."""
         self.net = network
         self.imdb = imdb
         self.roidb = roidb
         self.output_dir = output_dir
         self.pretrained_model = pretrained_model
+        self.resume_from_latest_ckpt = resume_from_latest_ckpt
 
         print 'Computing bounding-box regression targets...'
         if cfg.TRAIN.BBOX_REG:
@@ -141,22 +142,35 @@ class SolverWrapper(object):
         loss = cross_entropy + loss_box + rpn_cross_entropy + rpn_loss_box
 
         # optimizer and learning rate
-        global_step = tf.Variable(0, trainable=False)
+        start_iter = 0
+        if self.resume_from_latest_ckpt is not None:
+            ckpt = tf.train.get_checkpoint_state(self.output_dir)
+            start_iter = int(os.path.splitext(ckpt.model_checkpoint_path)[0].split('_')[-1])
+
+        global_step = tf.Variable(start_iter, trainable=False)
         lr = tf.train.exponential_decay(cfg.TRAIN.LEARNING_RATE, global_step,
                                         cfg.TRAIN.STEPSIZE, 0.1, staircase=True)
         momentum = cfg.TRAIN.MOMENTUM
         train_op = tf.train.MomentumOptimizer(lr, momentum).minimize(loss, global_step=global_step)
 
-        # iintialize variables
+        # initialize variables
         sess.run(tf.global_variables_initializer())
-        if self.pretrained_model is not None:
-            print ('Loading pretrained model '
-                   'weights from {:s}').format(self.pretrained_model)
-            self.net.load(self.pretrained_model, sess, self.saver, True)
+        if self.resume_from_latest_ckpt is not None:
+            ckpt = tf.train.get_checkpoint_state(self.output_dir)
+            if ckpt and ckpt.model_checkpoint_path:
+                print('resume from %s' % (ckpt.model_checkpoint_path))
+                self.saver.restore(sess, ckpt.model_checkpoint_path)     # restore all variables
+            last_snapshot_iter = global_step.eval()  # get last global_step
+            print('start from: %d'%last_snapshot_iter)
+        else:
+            if self.pretrained_model is not None:
+                print ('Loading pretrained model '
+                       'weights from {:s}').format(self.pretrained_model)
+                self.net.load(self.pretrained_model, sess, self.saver, True)
+            last_snapshot_iter = -1
 
-        last_snapshot_iter = -1
         timer = Timer()
-        for iter in range(max_iters):
+        for iter in range(start_iter, max_iters):
             # get one batch
             blobs = data_layer.forward()
 
@@ -254,12 +268,12 @@ def filter_roidb(roidb):
     return filtered_roidb
 
 
-def train_net(network, imdb, roidb, output_dir, pretrained_model=None, max_iters=40000):
+def train_net(network, imdb, roidb, output_dir, pretrained_model=None, resume_from_latest_ckpt=None, max_iters=40000):
     """Train a Fast R-CNN network."""
     roidb = filter_roidb(roidb)
     saver = tf.train.Saver(max_to_keep=100)
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        sw = SolverWrapper(sess, saver, network, imdb, roidb, output_dir, pretrained_model=pretrained_model)
+        sw = SolverWrapper(sess, saver, network, imdb, roidb, output_dir, pretrained_model=pretrained_model, resume_from_latest_ckpt=resume_from_latest_ckpt)
         print 'Solving...'
         sw.train_model(sess, max_iters)
         print 'done solving'

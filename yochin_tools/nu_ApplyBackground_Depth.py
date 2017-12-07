@@ -52,7 +52,7 @@ seq = iaa.Sequential(
                     iaa.MedianBlur(k=(3, 11)), # blur image using local medians with kernel sizes between 2 and 7
                 ]),
                 iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)), # sharpen images
-                iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)), # emboss images
+                # iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)), # emboss images
                 # search either for all edges or for directed edges
                 # sometimes(iaa.OneOf([
                 #     iaa.EdgeDetect(alpha=(0, 0.7)),
@@ -63,7 +63,7 @@ seq = iaa.Sequential(
                 #     iaa.Dropout((0.01, 0.1), per_channel=0.5), # randomly remove up to 10% of the pixels
                 #     iaa.CoarseDropout((0.03, 0.15), size_percent=(0.02, 0.05), per_channel=0.2),
                 # ]),
-                iaa.Invert(0.05, per_channel=True), # invert color channels
+                # iaa.Invert(0.05, per_channel=True), # invert color channels
                 iaa.Add((-10, 10), per_channel=0.5), # change brightness of images (by -10 to 10 of original value)
                 iaa.Multiply((0.5, 1.5), per_channel=0.5), # change brightness of images (50-150% of original value)
                 iaa.ContrastNormalization((0.5, 2.0), per_channel=0.5), # improve or worsen the contrast
@@ -77,6 +77,13 @@ seq = iaa.Sequential(
     random_order=True
 )
 
+# https://stackoverflow.com/questions/9041681/opencv-python-rotate-image-by-x-degrees-around-specific-point
+def rotateImage(image, angle):
+  image_center = tuple(np.array(image.shape)/2)
+  rot_mat = cv2.getRotationMatrix2D(image_center[:2], angle, 1.0)
+  result = cv2.warpAffine(image, rot_mat, image.shape[:2],flags=cv2.INTER_LINEAR)
+  return result
+
 def list_files(path, ext):
     filelist = []
     for name in os.listdir(path):
@@ -89,21 +96,50 @@ if __name__ == '__main__':
     '''
     This is the main function
     '''
-
-    rnd.seed(42)  # get the seed from current time, if the argument is not provided.
+    rnd.seed(42)      # get the seed from current time, if the argument is not provided.
 
     do_depth = False
-    do_iaa_augmentation = True
+    do_inplanerotation = False
+    inplanerot_range = [-45., 45.]      # deg
+    do_iaa_augmentation = False
+    do_iaa_augmentation_ratio = 0.5
 
-    # Official Test
-    imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan.SLS.DB.2017-03-21/ModMan.SLS.DB.2017-03-21'
+    # # DB version 6
+    # imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/LinMod_Rendering'
+    # backgFolder = '/media/yochin/ModMan DB/otherDBs/NewNegative' # 배경: 약 8000장
+    # listCategory = ['ace', 'champion', 'cheezit', 'chiffon', 'chococo', 'crayola',
+    #                 'expo', 'genuine', 'highland', 'mark', 'moncher', 'papermate',
+    #                 'waffle', 'cup', 'drill',  'mustard', 'scissors', 'tomatosoup']
+
+    # # DB version 7
+    # imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan.SLS.DB.2017-03-21/ModMan.SLS.DB.2017-03-21'
+    # backgFolder = '/media/yochin/ModMan DB/otherDBs/NewNegative'  # 배경: 약 8000장
+    # listCategory = ['Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
+    #                 'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
+    #                 'Genuine', 'Hammer', 'Highland', 'Mark', 'MasterChef',
+    #                 'Moncher', 'Mustard', 'Papermate', 'Peg', 'Scissors',
+    #                 'Sponge', 'TomatoSoup', 'Waffle', 'airplane', 'banana',
+    #                 'strawberry']
+
+    # # For Official Test
+    # imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan.SLS.DB.2017-03-21/ModMan.SLS.DB.2017-03-21'
+    # backgFolder = '/media/yochin/ModMan DB/otherDBs/NewNegative'  # 배경: 약 8000장
+    # listCategory = ['Ace', 'Apple', 'Cheezit', 'Chiffon', 'Crayola',
+    #                 'Drill', 'Genuine', 'Mustard', 'TomatoSoup', 'airplane']
+
+    # DB version 12
+    imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/SLSv1.2017-03-21(26Objs,5616Images)/ModMan.SLS.DB.2017-03-21'
     backgFolder = '/media/yochin/ModMan DB/otherDBs/NewNegative'  # 배경: 약 8000장
-    listCategory = ['Ace', 'Apple', 'Cheezit', 'Chiffon', 'Crayola',
-                    'Drill', 'Genuine', 'Mustard', 'TomatoSoup', 'airplane']
+    listCategory = ['Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
+                    'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
+                    'Genuine', 'Highland', 'Mark',
+                    'Moncher', 'Mustard', 'Papermate', 'Scissors',
+                    'TomatoSoup', 'Waffle', 'airplane', 'banana',
+                    'strawberry']
+
 
     # this is for ModManDB portable storage
-    # saveBaseFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan_SLSv1/data/'
-    saveBaseFolder = '/home/yochin/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
+    saveBaseFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
     savedFolder_Infos = saveBaseFolder + 'Annotations'
     savedFolder_Images = saveBaseFolder + 'Images'
     savedFolder_ImageSets = saveBaseFolder + 'ImageSets'
@@ -182,6 +218,13 @@ if __name__ == '__main__':
             # cv2.imshow('mask', imgMask)
             # cv2.waitKey(10)
 
+            imgPoints = cv2.findNonZero(imgMask)
+            min_rect = cv2.boundingRect(imgPoints)  # [x, y, w, h]
+            imgCropColor_original = img[min_rect[1]:min_rect[1] + min_rect[3],
+                                    min_rect[0]:min_rect[0] + min_rect[2]]
+            imgCropMask_original = imgMask[min_rect[1]:min_rect[1] + min_rect[3],
+                                   min_rect[0]:min_rect[0] + min_rect[2]]
+
             if do_depth == True:
                 # read depth data
                 # strDepthImg = Obj + '-rotate_' + '{0:04d}'.format(iImg) + '.exr'    # ver6
@@ -191,19 +234,35 @@ if __name__ == '__main__':
                 depth = cv2.imread(strPathFilename2.encode('utf-8'), cv2.IMREAD_UNCHANGED)
                 depth = depth[:,:,1]
 
-
-            imgPoints = cv2.findNonZero(imgMask)
-            min_rect = cv2.boundingRect(imgPoints)  # [x, y, w, h]
-            imgCropColor_original = img[min_rect[1]:min_rect[1] + min_rect[3], min_rect[0]:min_rect[0] + min_rect[2]]
-            imgCropMask_original = imgMask[min_rect[1]:min_rect[1] + min_rect[3], min_rect[0]:min_rect[0] + min_rect[2]]
-
-            if do_depth == True:
-                imgCropDepth_original = depth[min_rect[1]:min_rect[1] + min_rect[3], min_rect[0]:min_rect[0] + min_rect[2]]
-            # cv2.imshow("imgCrop", imgCrop)
-            # cv2.waitKey(10)
+                imgCropDepth_original = depth[min_rect[1]:min_rect[1] + min_rect[3],
+                                        min_rect[0]:min_rect[0] + min_rect[2]]
 
             for iDup in range(numcopy):
-                if do_iaa_augmentation is True:
+                if do_inplanerotation is True:
+                    rnd_angle = rnd.randrange(inplanerot_range[0], inplanerot_range[1])
+                    img_rot = rotateImage(img, rnd_angle)
+                    imgMask_rot = rotateImage(imgMask, rnd_angle)
+
+                    _, imgMask_rot = cv2.threshold(imgMask_rot, 250, 255, cv2.THRESH_BINARY)
+                    imgPoints = cv2.findNonZero(imgMask_rot)
+                    min_rect = cv2.boundingRect(imgPoints)  # [x, y, w, h]
+                    imgCropColor_original = img_rot[min_rect[1]:min_rect[1] + min_rect[3],
+                                            min_rect[0]:min_rect[0] + min_rect[2]]
+                    imgCropMask_original = imgMask_rot[min_rect[1]:min_rect[1] + min_rect[3],
+                                           min_rect[0]:min_rect[0] + min_rect[2]]
+
+                    if do_depth == True:
+                        depth_rot = rotateImage(depth, rnd_angle)
+                        imgCropDepth_original = depth_rot[min_rect[1]:min_rect[1] + min_rect[3],
+                                                min_rect[0]:min_rect[0] + min_rect[2]]
+
+
+                # cv2.imshow("imgMask", imgMask)
+                # cv2.imshow("imgCropMask_original", imgCropMask_original)
+                # cv2.waitKey(10)
+
+
+                if (do_iaa_augmentation is True) and (rnd.uniform(0, 1) < do_iaa_augmentation_ratio):
                     imgCropColor = seq.augment_images(np.expand_dims(imgCropColor_original, axis=0))
                     imgCropColor = imgCropColor[0,:,:,:]
                 else:
@@ -277,7 +336,7 @@ if __name__ == '__main__':
                         roi_depth = tarImgDepth[ty:ty+th, tx:tx+tw]
 
                     # with 80% probability, hide mask with random rotation, scaling.
-                    if rnd.randint(0, 9) > 4.5:
+                    if False:
                         while True:
                             cx = rnd.randint(1, tw-2)
                             cy = rnd.randint(1, th-2)

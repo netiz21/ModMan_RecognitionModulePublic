@@ -115,37 +115,40 @@ def read_data_xml(strfilename):
     return retlist
 
 
-# this func made main() could be called as import module.
-# read all files in Images and check both estDir and gndDir and calculate mAP
-def main():
-    listObject = [
-           'strawberry', 'papermate', 'highland', 'genuine', 'mark',
-           'expo', 'champion', 'orange', 'apple', 'cup',
-           'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup',
-           'drill', 'mustard', 'waffle', 'ace', 'airplane',
-           'moncher', 'cheezit', 'chococo'# , 'sponge'
-    ]
+def write_list_linebyline(fname, thelist):
+    fid = open(fname, 'w')
 
-    TH_range = np.arange(0., 1.025, 0.025)
+    for item in thelist:
+        fid.write('%s\n' % (item))
+
+    fid.close()
+
+
+def read_list_linebyline(fname):
+    with open(fname) as fid:
+        content = fid.readlines()
+    content = [item.rstrip('\n') for item in content]
+
+    return content
+
+
+# read all files in Images and check both estDir and gndDir and calculate mAP
+def check_mAP(listObject, strListfilePath, strGndFolder, strEstFolder, strResultFolder, IS_SCORE_RANGE_0_TO_100):
+    TH_range = np.arange(0., 1.025, 0.025)      # the result is same where 0.~1.025 or 0.~1.
     confMat = np.zeros((len(TH_range), len(listObject), 3), dtype = np.int)
 
-    strImageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/test_set/'       # read this image files and make a file list
-    strEstFolder = '/home/yochin/Desktop/ModManAPP_TF/EstResult/RealSolo_SynthDual/'      # check this your answer
-    strGndFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/test_set/Annotations/xml/'    # compare with this groundtruth
-
-    listTestFiles1 = list_files(strImageFolder, 'bmp')
-    listTestFiles2 = list_files(strImageFolder, 'jpg')
-    listTestFiles = []
-    listTestFiles.extend(listTestFiles1)
-    listTestFiles.extend(listTestFiles2)
+    # if the file list is not exist, make it!
+    listTestFiles = read_list_linebyline(strListfilePath)
 
     for iTH, TH in enumerate(TH_range):
-        TH = TH * 0.01
+        if IS_SCORE_RANGE_0_TO_100:
+            TH = TH * 100.
+
         for filename in listTestFiles:
             # print('%s_%d'%(objName, k))
             strBase = os.path.splitext(filename)[0]
-            strFileEst = strEstFolder + strBase + '_est.xml'
-            strFileGnd = strGndFolder + strBase + '.xml'
+            strFileEst = os.path.join(strEstFolder, strBase + '_est.xml')
+            strFileGnd = os.path.join(strGndFolder, strBase + '.xml')
 
             # fid1 = open(strFileGnd)
             # contentGnd = fid1.readlines()
@@ -204,17 +207,28 @@ def main():
 
 
 
-
+    fid = open(os.path.join(strResultFolder, 'result.txt'), 'w')
+    for Obj in listObject:
+        fid.write('%s\t'%Obj)
+    fid.write('\n')
     for i, Obj in enumerate(listObject):
         print('%s prec vs recall\n'%Obj)
+        print('TH prec. recall\n')
         y_prec = []
         x_recall = []
         for iTH, TH in enumerate(TH_range):
             # precision = tp / (tp + fp)
             # recall = tp / (tp + fn)
-            precision = float(confMat[iTH, i, 0]) / float(confMat[iTH, i, 0] + confMat[iTH, i, 1])
-            recall = float(confMat[iTH, i, 0]) / float(confMat[iTH, i, 0] + confMat[iTH, i, 2])
-            print('%f %f %f'%(TH, precision, recall))
+            if float(confMat[iTH, i, 0] + confMat[iTH, i, 1]) == 0:
+                precision = 0
+            else:
+                precision = float(confMat[iTH, i, 0]) / float(confMat[iTH, i, 0] + confMat[iTH, i, 1])
+
+            if float(confMat[iTH, i, 0] + confMat[iTH, i, 2]) == 0:
+                recall = 0
+            else:
+                recall = float(confMat[iTH, i, 0]) / float(confMat[iTH, i, 0] + confMat[iTH, i, 2])
+            # print('%f %f %f'%(TH, precision, recall))
 
             y_prec.append(precision)
             x_recall.append(recall)
@@ -237,7 +251,7 @@ def main():
 
         AP = sum(listPrec)/float(len(listPrec))
         print('AP: %f'%AP)
-        print(confMat[iTH, i, :])
+        # print(confMat[iTH, i, :])
         print(sum(confMat[iTH, i, :]))
 
 
@@ -249,11 +263,46 @@ def main():
         plt.ylabel('precision')
         # plt.legend('precision', 'interp_precision')
         plt.title(Obj)
-        plt.savefig('%s_result.png' % Obj)
-        plt.show()
+        plt.savefig(os.path.join(strResultFolder, '%s_result.png' % Obj))
+        # plt.show()
+        plt.close()
 
+        fid.write('%s\t'%AP)
 
+    fid.close()
 
 # this sentence made that main is not called when it is imported
 if __name__ == '__main__':
-    main()
+    listObject = [
+        'strawberry', 'papermate', 'highland', 'genuine', 'mark',
+        'expo', 'champion', 'orange', 'apple', 'cup',
+        'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup',
+        'drill', 'mustard', 'waffle', 'ace', 'airplane',
+        'moncher', 'cheezit', 'chococo'  # , 'sponge'
+    ]
+
+    # TestDB - MultiObjectReal-181
+    strListfilePath = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/MultiObjectReal-181/ImageSets/test.txt'
+    strGndFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/MultiObjectReal-181/Annotations/xml/'  # compare with this groundtruth
+    strEstFolder = '/home/yochin/Desktop/ModManAPP_TF/EstResult/Prj-RealSingle10375/MultiObjectReal-181/'  # check this your answer
+
+    # # TestDB - SingleObjectReal-1176
+    # strListfilePath = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/ImageSets/readlSingleObject-10375/test.txt'
+    # strGndFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/Annotations/'  # compare with this groundtruth
+    # strEstFolder = '/home/yochin/Desktop/ModManAPP_TF/EstResult/Prj-RealSingle10375/SingleObjectReal/'  # check this your answer
+
+    strResultFolder = strEstFolder + '../[Summary]'
+
+    IS_SCORE_RANGE_0_TO_100 = False
+
+    if False:
+        strImageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/test_set/Images/'  # read this image files and make a file list
+        listTestFiles1 = list_files(strImageFolder, 'bmp')
+        listTestFiles2 = list_files(strImageFolder, 'jpg')
+        listTestFiles = []
+        listTestFiles.extend(listTestFiles1)
+        listTestFiles.extend(listTestFiles2)
+
+        write_list_linebyline(strListfilePath, listTestFiles)
+
+    check_mAP(listObject, strListfilePath, strGndFolder, strEstFolder, strResultFolder, IS_SCORE_RANGE_0_TO_100)

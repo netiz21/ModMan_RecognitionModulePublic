@@ -1,7 +1,7 @@
 # coding=utf-8
 __author__ = 'yochin'
 
-# memo: two objects with occlusion <- apply random background.
+# memo: multiple objects with occlusion <- apply random background.
 
 # nu_ApplyBackground.py_rgb + depth
 
@@ -99,29 +99,30 @@ if __name__ == '__main__':
     '''
     This is the main function
     '''
+    # 4 object is subset of 3 object
+    # 3 object is subset of 2 object
+    # First, divide the number of images for each set (4 object 33%, 3 object 33%, 2 object 33%)
+    # Second, make lists which are images for each set and do not share ths images.
+    # Third, make image sets
+    rnd.seed(42)  # get the seed from current time, if the argument is not provided.
 
-    do_depth = False
+    '''
+    Settings
+    '''
     do_iaa_augmentation = False
 
-    # DB version 7
-    imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan.SLS.DB.2017-08-21.TwoObjectsSet.10000'
+    nNumMultiple = 4
+    pathImageFolders = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/SLSv1.MultiObjectsSet_%d'%nNumMultiple
     backgFolder = '/media/yochin/ModMan DB/otherDBs/NewNegative'  # 배경: 약 8000장
     listCategory = ['Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
                     'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
                     'Genuine', 'Highland', 'Mark',
                     'Moncher', 'Mustard', 'Papermate', 'Scissors',
-                    'Sponge', 'TomatoSoup', 'Waffle', 'airplane', 'banana',
+                    'TomatoSoup', 'Waffle', 'airplane', 'banana',
                     'strawberry']
 
-    # # For Official Test
-    # imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan.SLS.DB.2017-03-21/ModMan.SLS.DB.2017-03-21'
-    # backgFolder = '/media/yochin/ModMan DB/otherDBs/NewNegative'  # 배경: 약 8000장
-    # listCategory = ['Ace', 'Apple', 'Cheezit', 'Chiffon', 'Crayola',
-    #                 'Drill', 'Genuine', 'Mustard', 'TomatoSoup', 'airplane']
-
     # this is for ModManDB portable storage
-    # saveBaseFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan_SLSv1/data/'
-    saveBaseFolder = '/home/yochin/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
+    saveBaseFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
     savedFolder_Infos = os.path.join(saveBaseFolder, 'Annotations')
     savedFolder_Images = os.path.join(saveBaseFolder, 'Images')
     savedFolder_ImageSets = os.path.join(saveBaseFolder, 'ImageSets')
@@ -137,6 +138,11 @@ if __name__ == '__main__':
 
     IMAGE_SHORT_SIZE = 600.
 
+    numcopy = 1
+
+    '''
+    load background image
+    '''
     listBGimages = []
     listBGimagesnames = list_files(backgFolder, 'bmp')
     for iBG, strname in enumerate(listBGimagesnames):
@@ -159,19 +165,18 @@ if __name__ == '__main__':
         # if iBG == 10:
         #     break
 
-    print('total %d were collected'%len(listBGimages))
+    print('total background images %d were collected'%len(listBGimages))
 
     # k is sampled from all data.
-    listFiles = list_files(os.path.join(imageFolder, 'TwoObjs'), 'png')
+    listFiles = list_files(os.path.join(pathImageFolders, 'Images'), 'png')
 
-    numcopy = 1
     fid_sets_full = open(savedFolder_ImageSets + '/' + 'traintest.txt', 'w')
     fid_sets_miss = open(savedFolder_ImageSets + '/' + 'miss_image_list.txt', 'w')
 
     for strImg in listFiles:
         # read color data and mask info
         print(strImg)
-        strPathFilename = os.path.join(imageFolder, 'TwoObjs') + '/' + strImg
+        strPathFilename = os.path.join(pathImageFolders, 'Images') + '/' + strImg
         img = cv2.imread(strPathFilename.encode('utf-8'), cv2.IMREAD_COLOR)
 
         # Masks
@@ -235,22 +240,9 @@ if __name__ == '__main__':
                         imgCropMask_Occ = cv2.bitwise_and(imgCropMask, occMask)
                         _, imgCropMask_Occ = cv2.threshold(imgCropMask_Occ, 250, 255, cv2.THRESH_BINARY)
 
-                        if do_depth == True:
-                            occDepth_Warp = cv2.warpAffine(imgCropDepth, rotMat, (imgCropDepth.shape[1], imgCropDepth.shape[0]))
-
-                            randOccDist = rnd.uniform(0.05, occDepth_Warp.min())
-                            occDepth_Warp = occDepth_Warp - randOccDist    # occlusion object is in front of the target object.
-
-                            # make depth with occlusion
-                            fg1 = cv2.bitwise_and(imgCropDepth, imgCropDepth, mask=cv2.bitwise_not(occMask_Warp))
-                            fg2 = cv2.bitwise_and(occDepth_Warp, occDepth_Warp, mask=occMask_Warp)
-                            imgCropDepth_Occ = cv2.add(fg1, fg2)
-
                         if float(cv2.countNonZero(imgCropMask_Occ)) / float(cv2.countNonZero(imgCropMask)) > 0.5 and float(cv2.countNonZero(imgCropMask_Occ)) / float(cv2.countNonZero(imgCropMask)) < 0.75:
                             imgCropMask_whole = imgCropMask
                             imgCropMask = imgCropMask_Occ
-                            if do_depth == True:
-                                imgCropDepth = imgCropDepth_Occ
                             break
                 else:
                     imgCropMask_whole = imgCropMask
@@ -266,31 +258,6 @@ if __name__ == '__main__':
                 dst = cv2.add(img1_bg, img2_fg)
                 tarImg[ty:ty+th, tx:tx+tw] = dst
 
-                if do_depth == True:
-                    # augmentation in depth image
-                    imgCropMask_whole_inv = cv2.bitwise_not(imgCropMask_whole)
-                    img1_bg = cv2.bitwise_and(roi_depth, roi_depth, mask=imgCropMask_whole_inv)
-                    img2_fg = cv2.bitwise_and(imgCropDepth, imgCropDepth, mask=imgCropMask_whole)
-
-                    tarImgDepth[ty:ty + th, tx:tx + tw] = cv2.add(img1_bg, img2_fg)
-                    tarImgDepth = tarImgDepth * 1000.        # m -> cm (x100) -> mm (x10)
-
-                    # to visualize
-                    if 0:
-                        min_th = 300.
-                        max_th = 1000.
-
-                        tarImgDepth = (tarImgDepth - min_th) / (max_th-min_th) * 255
-                        tarImgDepth[tarImgDepth>255] = 255
-                        tarImgDepth[tarImgDepth<0] = 0
-                        tarImgDepth = tarImgDepth.astype(np.uint8)
-                    else:
-                        tarImgDepth[tarImgDepth > 15000] = 15000
-                        tarImgDepth[tarImgDepth < 0] = 0
-                        tarImgDepth = tarImgDepth.astype(np.uint16)
-
-                    # tarImgDepth = cv2.normalize(tarImgDepth, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
-
                 # cv2.imshow('tarImg', tarImg)
                 # cv2.waitKey(0)
                 # cv2.destroyAllWindows()
@@ -298,8 +265,6 @@ if __name__ == '__main__':
                 strImgOnlyname = strImg
 
                 cv2.imwrite(savedFolder_Images+'/'+ strImgOnlyname +'.jpg', tarImg)
-                if do_depth == True:
-                    cv2.imwrite(savedFolder_Images+'/'+ strImgOnlyname +'_depth.png', tarImgDepth)
 
                 # text type writing
                 # f = open(savedFolder_Infos+'/'+'.'.join(strImg.split('.')[0:-1])+'.txt', 'w')
@@ -310,8 +275,8 @@ if __name__ == '__main__':
                 # xml type writing
                 # index, top, left, bottom, right, yochin: class, bb + angle 도추가되어야
                 tag_anno = Element('annotation')
-                for iAnno in range(1, 3):
-                    strPathFilenameMask1 = os.path.join(imageFolder, 'Masks') + '/' + os.path.splitext(strImg)[0] + '-%d.png'%iAnno
+                for iAnno in range(1, nNumMultiple+1):
+                    strPathFilenameMask1 = os.path.join(pathImageFolders, 'Masks') + '/' + os.path.splitext(strImg)[0] + '-%d.png'%iAnno
                     rgba = cv2.imread(strPathFilenameMask1.encode('utf-8'), cv2.IMREAD_UNCHANGED)
                     imgMask = rgba[:, :, 3]
                     min_rect_obj1 = getBoundingBoxfromAlphaImage(imgMask)

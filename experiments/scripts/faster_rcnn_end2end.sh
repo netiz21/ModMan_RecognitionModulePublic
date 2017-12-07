@@ -29,12 +29,6 @@ case $DATASET in
     PT_DIR="pascal_voc"
     ITERS=70000
     ;;
-  slsv1)
-    TRAIN_IMDB="slsv1_train"
-    TEST_IMDB="slsv1_test"
-    PT_DIR="slsv1"
-     ITERS=140000
-    ;;
   coco)
     # This is a very long and slow training schedule
     # You can probably use fewer iterations and reduce the
@@ -44,16 +38,23 @@ case $DATASET in
     PT_DIR="coco"
     ITERS=490000
     ;;
+  slsv1)
+    TRAIN_IMDB="slsv1_train"
+    TEST_IMDB="slsv1_test"
+    PT_DIR="slsv1"
+     ITERS=70000
+    ;;
   *)
     echo "No dataset given"
     exit
     ;;
 esac
 
-LOG="experiments/logs/faster_rcnn_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
+LOG="output/_logs/faster_rcnn_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
 exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
+#  --resume 1 \
 time python ./tools/train_net.py --device ${DEV} --device_id ${DEV_ID} \
   --weights data/pretrain_model/VGG_imagenet.npy \
   --imdb ${TRAIN_IMDB} \
@@ -62,13 +63,13 @@ time python ./tools/train_net.py --device ${DEV} --device_id ${DEV_ID} \
   --network VGGnetslsv1_train \
   ${EXTRA_ARGS}
 
-set +x
-NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`
-set -x
-
-time python ./tools/test_net.py --device ${DEV} --device_id ${DEV_ID} \
-  --weights ${NET_FINAL} \
-  --imdb ${TEST_IMDB} \
-  --cfg experiments/cfgs/faster_rcnn_end2end.yml \
-  --network VGGnetslsv1_test \
-  ${EXTRA_ARGS}
+#set +x
+#NET_FINAL=`grep -B 1 "done solving" ${LOG} | grep "Wrote snapshot" | awk '{print $4}'`
+#set -x
+#
+#time python ./tools/test_net.py --device ${DEV} --device_id ${DEV_ID} \
+#  --weights ${NET_FINAL} \
+#  --imdb ${TEST_IMDB} \
+#  --cfg experiments/cfgs/faster_rcnn_end2end.yml \
+#  --network VGGnetslsv1_test \
+#  ${EXTRA_ARGS}
