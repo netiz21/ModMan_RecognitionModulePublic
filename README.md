@@ -3,6 +3,13 @@
 This is an experimental Tensorflow implementation of Faster RCNN - a convnet for object detection with a region proposal network.
 For details about R-CNN please refer to the paper [Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks](http://arxiv.org/pdf/1506.01497v3.pdf) by Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun.
 
+yochin47@gmail.com added helpful tools and detailed installation guide in below.
+
+
+### Requirements: hardware
+
+For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory is sufficient (using CUDNN)
+
 
 ### Requirements: software
 
@@ -10,9 +17,6 @@ For details about R-CNN please refer to the paper [Faster R-CNN: Towards Real-Ti
 
 2. Python packages you might not have: `cython`, `python-opencv`, `easydict`
 
-### Requirements: hardware
-
-1. For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory is sufficient (using CUDNN)
 
 ### Installation (sufficient for the demo)
 
