@@ -14,7 +14,17 @@ For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory
 ### Requirements: software
 
 1. Requirements for Tensorflow (see: [Tensorflow](https://www.tensorflow.org/))
-
+ In python 2.7
+ ```Shell
+    sudo apt-get install python-pip python-dev
+    pip install tensorflow-gpu
+ ```
+ In python 3.n
+ ```Shell
+    sudo apt-get install python3-pip python3-dev
+    pip3 install tensorflow-gpu
+ ```
+ 
 2. Python packages you might not have: `cython`, `python-opencv`, `easydict`
 
 
@@ -23,14 +33,23 @@ For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory
 1. Clone the Faster R-CNN repository
   ```Shell
   # Make sure to clone with --recursive
-  git clone --recursive https://github.com/smallcorgi/Faster-RCNN_TF.git
+  git clone --recursive https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git
   ```
+  or download and unzip the zipped file.
+  
+  The unzipped folder == FRCN_ROOT
 
 2. Build the Cython modules
     ```Shell
     cd $FRCN_ROOT/lib
     make
     ```
+    
+    If you meet an error "No moduel named Cython.~~", follow the below command.
+    ```Shell
+    sudo pip install cython
+    ```
+    
 
 ### Demo
 

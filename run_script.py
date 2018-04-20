@@ -4,6 +4,9 @@ import datetime
 # delete t.he previous data caches
 os.system('rm ./data/cache/*.pkl')
 
+'''
+This script is for Synthetic Learning dataset
+'''
 # # print the start time on the file
 # fid = open('/home/yochin/Desktop/ModMan_KIRIA/log2.txt', 'w')
 # print >> fid, 'start time : ', datetime.datetime.now()
@@ -14,7 +17,7 @@ os.system('rm ./data/cache/*.pkl')
 
 # os.system('python ./yochin_tools/nu_makeSuffleRowsText.py')
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh gpu 1 VGG16 slsv1 --set EXP_DIR VGGnet-RealSingle_SynthMultiObj234 RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
+os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet-RealSingle_SynthMultiObj234 RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
 
 # os.system('./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet_KIRIA_noFlipped_DBV10_train RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
 #  2>&1 | tee ./log_VarEnv_withTwoObjs.log
@@ -22,10 +25,6 @@ os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh g
 # # print the end time on the file
 # print >> fid, '', datetime.datetime.now()
 # fid.close()
-
-# #
-# # generate an image ./experiments/profiling/profile.png
-# os.system('python experiments/profiling/gprof2dot.py -f pstats experiments/profiling/profile.out | dot -Tpng -o experiments/profiling/profile.png')
 
 # tensorboard, localhost:6006
 # os.system('tensorboard --logdir=./logs/')
