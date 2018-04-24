@@ -1,10 +1,11 @@
-# Faster-RCNN_TF
+# ModMan object detection and pose estimation module
 
-This is an experimental Tensorflow implementation of Faster RCNN - a convnet for object detection with a region proposal network.
-For details about R-CNN please refer to the paper [Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks](http://arxiv.org/pdf/1506.01497v3.pdf) by Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun.
+This is an object detection and pose estimation module in Modular Manipulation Project.
 
-yochin47@gmail.com added helpful tools and detailed installation guide in below.
+The object detection part is mainly based on the [Faster-RCNN_TF](https://github.com/smallcorgi/Faster-RCNN_TF) that refers to the paper [Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks](http://arxiv.org/pdf/1506.01497v3.pdf) by Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun.
+Pose estimation part is composed of SURF and PnPSolver of [OpenCV](https://opencv.org/)
 
+Additional parts such as various inputs (web camera, realsense, image and video) and communication modules are added to the main code. 
 
 ### Requirements: hardware
 
@@ -14,8 +15,9 @@ For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory
 ### Requirements: software
 
 1. Requirements for Tensorflow (see: [Tensorflow](https://www.tensorflow.org/))
+
  In python 2.7
- ```Shell
+ ```
     sudo apt-get install python-pip python-dev
     pip install tensorflow-gpu
  ```
@@ -28,7 +30,45 @@ For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory
 2. Python packages you might not have: `cython`, `python-opencv`, `easydict`
 
 
-### Installation (sufficient for the demo)
+### Installation
+
+1. install Ubuntu, NVIDIA driver, CUDA, cudnn
+https://yochin47.blogspot.com/b/post-preview?token=jRWq4mIBAAA.VK6RHTAdt_xdkHa1MfMMbAZtZ5o7lNvE6YZ_cBAIkiMWnQ2U0rtDn21vvyV-s1suOevKFKz3ScjRBU8LcmAefQ.GVl7Oypj1ycMYh32u0NF2g&postId=6045618232993691092&type=POST
+
+2. Anaconda installation
+import ModMan conda env.
+
+3. Download Faster-RCNN_TF based ModMan recognition module
+git clone https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git
+
+4. compile
+source activate ModMan
+cd FRCN/lib
+make
+
+error: roi_pooling_op.cu.o: No such file or directory
+add  to your path
+export PATH="/usr/local/cuda-8.0/bin:$PATH"
+
+5. download trained model
+move DBv1 folder to FRCN/yochin_tools/PoseEst
+move models folder to FRCN
+
+6. set path & run
+
+
+
+* If you meet a erro message like 'import module error ###', then install that module using below command.
+source activate ModMan
+
+pip install pyyaml
+conda install -c auto easydict
+conda install -c auto scipy
+conda install -c https://conda.anaconda.org/menpo opencv
+conda install -c conda-forge hdf5 
+conda install -c auto matplotlib
+conda install -c anaconda h5py
+
 
 1. Clone the Faster R-CNN repository
   ```Shell
@@ -50,94 +90,8 @@ For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory
     sudo pip install cython
     ```
     
-
-### Demo
-
-*After successfully completing [basic installation](#installation-sufficient-for-the-demo)*, you'll be ready to run the demo.
-
-Download model training on PASCAL VOC 2007  [[Google Drive]](https://drive.google.com/open?id=0ByuDEGFYmWsbZ0EzeUlHcGFIVWM) [[Dropbox]](https://www.dropbox.com/s/cfz3blmtmwj6bdh/VGGnet_fast_rcnn_iter_70000.ckpt?dl=0)
-
-To run the demo
-```Shell
-cd $FRCN_ROOT
-python ./tools/demo.py --model model_path
-```
-The demo performs detection using a VGG16 network trained for detection on PASCAL VOC 2007.
-
-### Training Model
-1. Download the training, validation, test data and VOCdevkit
-
-	```Shell
-	wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar
-	wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar
-	wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCdevkit_08-Jun-2007.tar
-	```
-
-2. Extract all of these tars into one directory named `VOCdevkit`
-
-	```Shell
-	tar xvf VOCtrainval_06-Nov-2007.tar
-	tar xvf VOCtest_06-Nov-2007.tar
-	tar xvf VOCdevkit_08-Jun-2007.tar
-	```
-
-3. It should have this basic structure
-
-	```Shell
-  	$VOCdevkit/                           # development kit
-  	$VOCdevkit/VOCcode/                   # VOC utility code
-  	$VOCdevkit/VOC2007                    # image sets, annotations, etc.
-  	# ... and several other directories ...
-  	```
-
-4. Create symlinks for the PASCAL VOC dataset
-
-	```Shell
-    cd $FRCN_ROOT/data
-    ln -s $VOCdevkit VOCdevkit2007
-    ```
-    
-5. Download pre-trained ImageNet models
-
-   Download the pre-trained ImageNet models [[Google Drive]](https://drive.google.com/open?id=0ByuDEGFYmWsbNVF5eExySUtMZmM) [[Dropbox]](https://www.dropbox.com/s/po2kzdhdgl4ix55/VGG_imagenet.npy?dl=0)
-   
-   	```Shell
-    mv VGG_imagenet.npy $FRCN_ROOT/data/pretrain_model/VGG_imagenet.npy
-    ```
-
-6. Run script to train and test model
-	```Shell
-	cd $FRCN_ROOT
-	./experiments/scripts/faster_rcnn_end2end.sh $DEVICE $DEVICE_ID VGG16 pascal_voc
-	```
-  DEVICE is either cpu/gpu
-
-### The result of testing on PASCAL VOC 2007 
-
-| Classes       | AP     |
-|-------------|--------|
-| aeroplane   | 0.698 |
-| bicycle     | 0.788 |
-| bird        | 0.657 |
-| boat        | 0.565 |
-| bottle      | 0.478 |
-| bus         | 0.762 |
-| car         | 0.797 |
-| cat         | 0.793 |
-| chair       | 0.479 |
-| cow         | 0.724 |
-| diningtable | 0.648 |
-| dog         | 0.803 |
-| horse       | 0.797 |
-| motorbike   | 0.732 |
-| person      | 0.770 |
-| pottedplant | 0.384 |
-| sheep       | 0.664 |
-| sofa        | 0.650 |
-| train       | 0.766 |
-| tvmonitor   | 0.666 |
-| mAP        | 0.681 |
-
+### Update
+The updated code will be uploaded on [git server](https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git).
 
 ###References
 [Faster R-CNN caffe version](https://github.com/rbgirshick/py-faster-rcnn)
