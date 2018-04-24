@@ -1,133 +1,51 @@
 # coding=utf-8
 # #!/usr/bin/env python
 
+# default library
 import os
 import sys
 import struct
 import copy
-sys.path.append('/home/yochin/Faster-RCNN_TF/lib')
+
+import yo_network_info
+sys.path.append(os.path.join(yo_network_info.PATH_BASE, 'lib'))
 # sys.path.append('/usr/lib/python2.7/dist-packages')
 
+# Faster-RCNN_TF
 from networks.factory import get_network
 from fast_rcnn.config import cfg
 from fast_rcnn.test import im_detect
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
-from PoseEst.Function_Pose_v1 import *
+
+# ModMan module & Pose estimation
+from PoseEst.Function_Pose_v2 import *
 import math
 
-#import caffe
 import tensorflow as tf
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
-import argparse
-import random
 from xml.etree.ElementTree import Element, dump, SubElement, ElementTree
 from datetime import datetime
 
 # socket
 from socket import *
-from select import select
 import errno
 
+# debugging
 import logging
 logging.basicConfig(level = logging.INFO)
 
+# realsense
 import pyrealsense as pyrs
 
+CLASSES = yo_network_info.CLASSES
+Candidate_CLASSES = yo_network_info.Candidate_CLASSES
+NUM_CLASSES = yo_network_info.NUM_CLASSES
 
 CONF_THRESH = 0.6
 NMS_THRESH = 0.3
-
-# for DBv6
-# CLASSES = ( '__background__',
-#             'ace', #1
-#             'champion',
-#             'cheezit',
-#             'chiffon',
-#             'chococo', #5
-#             'crayola',
-#             'expo',
-#             'genuine',
-#             'highland',
-#             'mark', #10
-#             'moncher',
-#             'papermate',
-#             'waffle',
-#             'cup',
-#             'drill',
-#             'mustard',
-#             'scissors',
-#             'tomatosoup') # 18
-
-# # for DBv7
-# CLASSES = ( '__background__',
-#                     'Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
-#                     'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
-#                     'Genuine', 'Hammer', 'Highland', 'Mark', 'MasterChef',
-#                     'Moncher', 'Mustard', 'Papermate', 'Peg', 'Scissors',
-#                     'Sponge', 'TomatoSoup', 'Waffle', 'airplane', 'banana',
-#                     'strawberry')
-#
-# Candidate_CLASSES = ('Ace', 'Cheezit', 'Chiffon',
-#                     'Chococo', 'Crayola',
-#                     'Genuine', 'Waffle')#'Drill',, 'airplane''Moncher','Mustard','TomatoSoup',
-#
-# # for DBV11_10obj
-# CLASSES_10obj = ['__background__',
-#                  'Ace', 'Apple', 'Cheezit', 'Chiffon', 'Crayola',
-#                  'Drill', 'Genuine', 'Mustard', 'TomatoSoup', 'airplane']
-# CLASSES = CLASSES_10obj
-
-# for realV1
-# CLASSES = ('__background__',
-#            'strawberry', 'Papermate', 'Highland', 'Genuine', 'Mark',
-#            'Expo', 'Champion', 'Orange', 'Apple', 'Cup',
-#            'banana', 'Chiffon', 'Crayola', 'Scissors', 'TomatoSoup',
-#            'Drill', 'Mustard', 'Waffle', 'Ace', 'airplane',
-#            'Moncher', 'Cheezit', 'Chococo'
-# )
-#
-# Candidate_CLASSES = (
-# 'Ace','Apple', 'Champion', 'Cheezit', 'Chiffon',
-# 'Chococo', 'Crayola','Cup', 'Drill', 'Expo', 'Genuine',
-# 'Highland', 'Mark','Waffle', 'Moncher', 'Mustard', 'Papermate', 'Scissors', 'TomatoSoup'
-# )
-# # 'strawberry', 'airplane','Papermate', 'Orange', 'Apple', 'Cup','banana',  'Scissors', 'TomatoSoup','Drill', 'Mustard','Moncher',
-
-# for real_sole + synthetic_duet
-# # db for real data - 25 OBJECTS (+ sponge)
-# CLASSES = ('__background__', # always index 0
-#            'strawberry', 'papermate', 'highland', 'genuine', 'mark',
-#            'expo', 'champion', 'orange', 'apple', 'cup',
-#            'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup',
-#            'drill', 'mustard', 'waffle', 'ace', 'airplane',
-#            'moncher', 'cheezit', 'chococo', 'sponge') # change n_classes in networks/VGGnetslsv1_train/test.py
-
-# db for real data - 22 OBJECTS
-CLASSES = ('__background__', # always index 0
-           'strawberry', 'papermate', 'highland', 'genuine', 'mark',
-           'expo', 'champion', 'apple', 'cup',
-           'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup',
-           'drill', 'mustard', 'waffle', 'ace', 'airplane',
-           'moncher', 'cheezit', 'chococo') # change n_classes in networks/VGGnetslsv1_train/test.py
-
-Candidate_CLASSES = ('ace', 'apple', 'cheezit', 'chococo', 'crayola',
-                     'drill', 'genuine', 'moncher', 'mustard', 'papermate',
-                     'scissors', 'tomatosoup', 'waffle')
-
-
-# CLASSES = ('__background__',
-#            'aeroplane', 'bicycle', 'bird', 'boat',
-#            'bottle', 'bus', 'car', 'cat', 'chair',
-#            'cow', 'diningtable', 'dog', 'horse',
-#            'motorbike', 'person', 'pottedplant',
-#            'sheep', 'sofa', 'train', 'tvmonitor')
-
-NUM_CLASSES = len(CLASSES) # +1 for background
-
 
 # Checks if a matrix is a valid rotation matrix.
 def isRotationMatrix(R):
@@ -264,6 +182,12 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
         dets = dets[keep, :]
 
         inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+
+        # # make the result,
+        # dets[0, :4] = [0, 0, im.shape[1], im.shape[0]]
+        # dets[0, -1] = .99
+        # class_name = 'ace'
+        # inds = [0]
 
         if len(inds) > 0:
             for i in inds:
@@ -707,6 +631,8 @@ if __name__ == '__main__':
             # cv2.imshow('Input', frame)
             # cv2.waitKey
 
+            # frame = cv2.flip(frame, 1)
+
             cv2.imwrite('./debug_img.png', frame)
 
             if ret is True:
@@ -918,7 +844,8 @@ if __name__ == '__main__':
                 print('send _%s_ to KIST'%(msg))
     elif INPUT_TYPE == 2:
         # strImageFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/Images'  # Single Object image files
-        strImageFolder = '../debug_dropbox_upload/test'
+        # strImageFolder = '../debug_dropbox_upload/test'
+        strImageFolder = '../realDB'
         strPathResult = './dummy'
 
         if not os.path.exists(strPathResult):
@@ -938,7 +865,7 @@ if __name__ == '__main__':
             listTestFiles.extend(listTestFiles2)
             listTestFiles.extend(listTestFiles3)
 
-        for filenameExt in listTestFiles:
+        for filenameExt in listTestFiles[3:]:
             filename = os.path.splitext(filenameExt)[0]
             # filenameExt = filename + '.jpg'
 
@@ -952,6 +879,7 @@ if __name__ == '__main__':
                     demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'), extMat, FeatureDB, CoorDB, GeoDB)
                 else:
                     demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'))
+
                 # cv2.waitKey(0)
     elif INPUT_TYPE == 4:
         # # as a client, connect to a KIST server

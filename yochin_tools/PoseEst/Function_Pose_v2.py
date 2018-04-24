@@ -4,8 +4,9 @@ from matplotlib import pyplot as plt
 import os
 import scipy.io as io    
 import h5py
+import yo_network_info
 
-basePath = '/home/yochin/Faster-RCNN_TF/yochin_tools/PoseEst/DBv1'
+basePath = os.path.join(yo_network_info.PATH_BASE, 'yochin_tools/PoseEst/DBv1')
 TH_CORRESPONDENCES = 20
 TH_INLIERS = 10
 
@@ -95,16 +96,24 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord, MaxIterRansac=1000):  
             IterRansac = 0
 
             while len(inliers)<int(round(len(matches)/4)) or tvec[2][0]<0:
-                ErrorThreshold = ErrorThreshold+0.3
+                ErrorThreshold = ErrorThreshold + 3
                 (_, rvec,tvec,inliers)= cv2.solvePnPRansac(objpoints, imgpoints, ret, dist,reprojectionError=ErrorThreshold)
+
+                # print('>>>>>>>>>>>>>>>>>>>>>>>>>>')
+                # print(rvec)
+                # print(tvec[2][0])
+                # print('<<<<<<<<<<<<<<<<<<<<<<<<<<')
 
                 # added by yochin
                 # MaxIterRansac : to avoid infinite loop.
                 IterRansac = IterRansac + 1
                 if IterRansac > MaxIterRansac:
+                    print('IterRansac > MaxIterRansac')
                     inliers = None
                     break
-                # print(tvec[2][0])            
+
+            print('IterRansac: %d'%IterRansac)
+                # print(tvec[2][0])
 			#(_, rvec, tvec) = cv2.solvePnP(objpoints, imgpoints, ret, dist)  # flags = cv2.SOLVEPNP_P3P, iterationsCount=1000, rvec=rvec, tvec=tvec, useExtrinsicGuess=True
 
             # # for debugging
