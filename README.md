@@ -3,62 +3,136 @@
 This is an object detection and pose estimation module in Modular Manipulation Project.
 
 The object detection part is mainly based on the [Faster-RCNN_TF](https://github.com/smallcorgi/Faster-RCNN_TF) that refers to the paper [Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks](http://arxiv.org/pdf/1506.01497v3.pdf) by Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun.
-Pose estimation part is composed of SURF and PnPSolver of [OpenCV](https://opencv.org/)
+Pose estimation part is composed of SURF-based feature matching and PnPSolver using [OpenCV](https://opencv.org/)
 
-Additional parts such as various inputs (web camera, realsense, image and video) and communication modules are added to the main code. 
+Additional parts such as various input modules (web camera, Intel realsense, images and videos) and communication modules are added to the main code. 
 
 ### Requirements: hardware
 
-For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory is sufficient (using CUDNN)
+For running the recognition module, GPU memory is needed.
 
+### Installation: software
 
-### Requirements: software
-
-1. Requirements for Tensorflow (see: [Tensorflow](https://www.tensorflow.org/))
-
- In python 2.7
- ```
-    sudo apt-get install python-pip python-dev
-    pip install tensorflow-gpu
- ```
- In python 3.n
- ```Shell
-    sudo apt-get install python3-pip python3-dev
-    pip3 install tensorflow-gpu
- ```
+1. Install Ubuntu 16.04.xx
  
-2. Python packages you might not have: `cython`, `python-opencv`, `easydict`
+2. Install NVIDIA driver, CUDA 8.0, cudnn 5.1.
 
+    2.1. Nvidia driver
 
-### Installation
+    ```Shell
+    sudo apt-get purge nvidia*
+    sudo add-apt-repository ppa:graphics-drivers
+    sudo apt-get update
 
-1. install Ubuntu, NVIDIA driver, CUDA, cudnn
-https://yochin47.blogspot.com/b/post-preview?token=jRWq4mIBAAA.VK6RHTAdt_xdkHa1MfMMbAZtZ5o7lNvE6YZ_cBAIkiMWnQ2U0rtDn21vvyV-s1suOevKFKz3ScjRBU8LcmAefQ.GVl7Oypj1ycMYh32u0NF2g&postId=6045618232993691092&type=POST
+    sudo apt-get install nvidia-375
 
-2. Anaconda installation
-import ModMan conda env.
+    lsmod | grep nvidia
+    ```
 
-3. Download Faster-RCNN_TF based ModMan recognition module
-git clone https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git
+    2.2. CUDA 8.0
+    
+    Access https://developer.nvidia.com/cuda-downloads
+    
+    Download Linux->x86_64->Ubuntu0>16.04->deb(local)->download
 
-4. compile
-source activate ModMan
-cd FRCN/lib
-make
+    ```Shell
+    sudo dpkg -i cuda-repo-ubuntu1604-8-0-local_8.0.44-1_amd64.deb
+    sudo apt-get update
+    sudo apt-get install cuda
+    
+    ls /usr/local/cuda/lib64
+    ```
+    If you find the file names "~~~.so.8.0", the installation is completed.
+    
+    2.3. CUDNN 5.1
+    
+    Access https://developer.nvidia.com/cudnn
+    
+    Download Download -> Log in -> Survey (pass) -> Download cuDNN v5.1 for CUDA 8.0 -> cuDNN v5.1 Library for Linux
+    
+    ```Shell
+    tar -zxvf cudnn-8.0-linux-x64-v6.0.tgz
+    sudo cp ./cuda/include/* /usr/local/cuda-8.0/include/
+    sudo cp ./cuda/lib64/* /usr/local/cuda-8.0/lib64/
 
-error: roi_pooling_op.cu.o: No such file or directory
-add  to your path
-export PATH="/usr/local/cuda-8.0/bin:$PATH"
+    ls /usr/local/cuda/lib64/libcudnn*
 
-5. download trained model
-move DBv1 folder to FRCN/yochin_tools/PoseEst
-move models folder to FRCN
+    ```
+    
+    If you find the file names "~~~.so.5.1.x", the installation is completed.
 
-6. set path & run
+3. Anaconda installation and import conda environment
 
+    Download Anaconda at https://www.anaconda.com/download/#linux with Python 2.7 version.
 
+    Import ModMan conda env.
 
-* If you meet a erro message like 'import module error ###', then install that module using below command.
+    ```Shell
+
+    ```
+
+4. Download and compile Faster-RCNN_TF based ModMan recognition module
+
+    ```Shell
+    git clone https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git
+    ```
+    
+    Let $FRCN as the downloaded folder name.
+
+    ```Shell
+    source activate ModMan
+    cd $FRCN/lib
+    make
+    ```
+
+    If you meet an error while compiling, then see the below solutions.
+    
+    error: roi_pooling_op.cu.o: No such file or directory
+    
+    add to your path
+    export PATH="/usr/local/cuda-8.0/bin:$PATH"
+
+5. Download trained model
+
+    Download [DBv1](https://drive.google.com/open?id=1whjx999HjnITSwtCuP849gHVsOz8Ly2S) and [models](https://drive.google.com/open?id=1tVcE0uufb4D5XnUO34HWoqJr2pBainy9).
+
+    Move DBv1 folder to $FRCN/yochin_tools/PoseEst
+    
+    Move models folder to $FRCN
+
+6. Set path and run the program
+
+    Change PATH_BASE in $FRCN/yochin_tools/yo_network_info.py to become the real path to $FRCN.
+    
+    In the main code my_demo_tf_wPoseEst_conSKKUKIST.py.
+
+    If you don't want to use realsense, then comment line 41.
+    
+    ```Shell
+    # import pyrealsense as pyrs
+    ```
+    
+    If you use the program as a server (receiving images from the client PC), then    
+    
+    In line 449, INPUT_TYPE = 5
+    In line 459, extMat = getCamIntParams('client')
+    In line 1051 and 1052, IP address and port number should be set.
+    
+    If you use the program as a standalone program using web camera,
+    
+    In line 449, INPUT_TYPE = 0
+    In line 459, extMat = getCamIntParams('') <-- select the proper camera name.
+
+    If you set all parameters, then run the program.
+    ```Shell
+    python my_demo_tf_wPoseEst_conSKKUKIST.py
+    ```
+    
+### Errors
+
+If you meet a error message like 'import module error ###', then install that module using below command.
+
+```Shell
 source activate ModMan
 
 pip install pyyaml
@@ -68,28 +142,8 @@ conda install -c https://conda.anaconda.org/menpo opencv
 conda install -c conda-forge hdf5 
 conda install -c auto matplotlib
 conda install -c anaconda h5py
+```
 
-
-1. Clone the Faster R-CNN repository
-  ```Shell
-  # Make sure to clone with --recursive
-  git clone --recursive https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git
-  ```
-  or download and unzip the zipped file.
-  
-  The unzipped folder == FRCN_ROOT
-
-2. Build the Cython modules
-    ```Shell
-    cd $FRCN_ROOT/lib
-    make
-    ```
-    
-    If you meet an error "No moduel named Cython.~~", follow the below command.
-    ```Shell
-    sudo pip install cython
-    ```
-    
 ### Update
 The updated code will be uploaded on [git server](https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git).
 

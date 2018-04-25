@@ -446,7 +446,7 @@ if __name__ == '__main__':
     '''
     Settings
     '''
-    INPUT_TYPE = 5      # 0: WebCamera,
+    INPUT_TYPE = 0      # 0: WebCamera,
                         # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
@@ -456,8 +456,8 @@ if __name__ == '__main__':
     USE_POSEESTIMATE = True
 
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
-        extMat = getCamIntParams('client')
-        # extMat = getCamIntParams('C920')#
+        # extMat = getCamIntParams('client')
+        extMat = getCamIntParams('C920')#
 
     DO_WRITE_RESULT_AVI = False
     name_output_avi = 'output.avi'
@@ -560,7 +560,8 @@ if __name__ == '__main__':
     # tfmodel = '../output/VGGnet_140000_Prj-RealSingle10375/train/VGGnet_fast_rcnn_iter_70000.ckpt'    # real db
     # tfmodel = '../output/VGGnet_140000_noFlipped_DBV11_10obj_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
     # tfmodel = '../output/2. VGGnet_140000_Prj-RealSingle8883_SynthTwo9150_ExcSponageOrange/train/VGGnet_fast_rcnn_iter_70000.ckpt'  # real db
-    tfmodel = '../output/VGGnet-RealSingle_SynthMultiObj234/train/VGGnet_fast_rcnn_iter_70000.ckpt'
+    # tfmodel = '../output/VGGnet-RealSingle_SynthMultiObj234/train/VGGnet_fast_rcnn_iter_70000.ckpt'
+    tfmodel = '../models/VGGnet_fast_rcnn_iter_70000.ckpt'
 
 
     # init session
