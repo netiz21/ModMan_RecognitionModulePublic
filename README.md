@@ -64,11 +64,13 @@ For running the recognition module, GPU memory is needed.
 3. Anaconda installation and import conda environment
 
     Download Anaconda at https://www.anaconda.com/download/#linux with Python 2.7 version.
-
+    Install Anaconda.
+    
+    Download [the conda env file](https://drive.google.com/file/d/1xfBrtvyViyP9UWn7mS1mnJ_4EFxh7BiM/view?usp=sharing).
     Import ModMan conda env.
 
     ```Shell
-
+    conda env create -f ModMan_env.yml
     ```
 
 4. Download and compile Faster-RCNN_TF based ModMan recognition module
