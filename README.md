@@ -89,11 +89,19 @@ For running the recognition module, GPU memory is needed.
 
     If you meet an error while compiling, then see the below solutions.
     
-    error: roi_pooling_op.cu.o: No such file or directory
+    * error: roi_pooling_op.cu.o: No such file or directory
     
     add to your path
     export PATH="/usr/local/cuda-8.0/bin:$PATH"
-
+    
+    * error: #error Do not use this file, it is the result of a failed Cython compilation.
+    [Ref: https://github.com/rbgirshick/py-faster-rcnn/issues/647]
+    install cython, then make again.
+    ```Shell
+    source activate ModMan
+    conda install -c anaconda cython
+    ```
+    
 5. Download trained model
 
     Download [DBv1](https://drive.google.com/open?id=1whjx999HjnITSwtCuP849gHVsOz8Ly2S) and [models](https://drive.google.com/open?id=1tVcE0uufb4D5XnUO34HWoqJr2pBainy9).
@@ -132,7 +140,7 @@ For running the recognition module, GPU memory is needed.
     
 ### Errors
 
-If you meet a error message like 'import module error ###', then install that module using below command.
+If you meet a error message like 'import module error ###', then install that module using one of below commands.
 
 ```Shell
 source activate ModMan
