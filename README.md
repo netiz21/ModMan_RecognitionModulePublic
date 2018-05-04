@@ -91,8 +91,11 @@ For running the recognition module, GPU memory is needed.
     
     * error: roi_pooling_op.cu.o: No such file or directory
     
-    add to your path
+    add to your path.
     export PATH="/usr/local/cuda-8.0/bin:$PATH"
+    If you are using other version of CUDA, then modify the CUDA path.
+    
+    Or you can also add the path in ~/.bashrc.
     
     * error: #error Do not use this file, it is the result of a failed Cython compilation.
     [Ref: https://github.com/rbgirshick/py-faster-rcnn/issues/647]
