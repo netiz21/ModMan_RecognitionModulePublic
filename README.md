@@ -33,7 +33,7 @@ For running the recognition module, GPU memory is needed.
     
     Access https://developer.nvidia.com/cuda-downloads
     
-    Download Linux->x86_64->Ubuntu0>16.04->deb(local)->download
+    Download Legacy Releases->CUDA Toolkit 8.0 GA1 (Sept 2016)->Linux->x86_64->Ubuntu0>16.04->deb(local)->download
 
     ```Shell
     sudo dpkg -i cuda-repo-ubuntu1604-8-0-local_8.0.44-1_amd64.deb
@@ -49,6 +49,7 @@ For running the recognition module, GPU memory is needed.
     Access https://developer.nvidia.com/cudnn
     
     Download Download -> Log in -> Survey (pass) -> Download cuDNN v5.1 for CUDA 8.0 -> cuDNN v5.1 Library for Linux
+    or Download from [here](https://drive.google.com/open?id=1o7sZdUlJp6H8ZXhBN3IrukM0HbqrCnPj).
     
     ```Shell
     tar -zxvf cudnn-8.0-linux-x64-v6.0.tgz
