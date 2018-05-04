@@ -97,6 +97,12 @@ For running the recognition module, GPU memory is needed.
     
     Or you can also add the path in ~/.bashrc.
     
+    * error: fatal error: math_functions.hpp: No such file or directory
+    [Ref: https://github.com/tensorflow/tensorflow/issues/15389]
+    Make a softlink from /usr/local/cuda-9.1/include/crt/math_functions.hpp to /usr/local/cuda-9.1/include/math_functions.hpp
+    at /usr/local/cuda-9.1/include    
+    ln -s ./crt/math_functions.hpp ./math_functions.hpp
+    
     * error: #error Do not use this file, it is the result of a failed Cython compilation.
     [Ref: https://github.com/rbgirshick/py-faster-rcnn/issues/647]
     install cython, then make again.
