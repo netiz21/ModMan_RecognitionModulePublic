@@ -4,8 +4,9 @@ from matplotlib import pyplot as plt
 import os
 import scipy.io as io    
 import h5py
+import yo_network_info
 
-basePath = '/home/yochin/Faster-RCNN_TF/yochin_tools/PoseEst/DBv1'
+basePath = os.path.join(yo_network_info.PATH_BASE, 'yochin_tools/PoseEst/DBv1')
 TH_CORRESPONDENCES = 20
 TH_INLIERS = 10
 

@@ -76,41 +76,41 @@ For running the recognition module, GPU memory is needed.
 
 4. Download and compile Faster-RCNN_TF based ModMan recognition module
 
-    ```Shell
-    // Let $FRCN as the downloaded folder name.
+    ```Shell    
     git clone https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git
-    
+    ```
+    ```Shell    
     source activate ModMan
-    cd $FRCN/lib
+    cd $FRCN/lib        // Let $FRCN as the downloaded folder name.
     make
     ```
     
     If you meet an error while compiling, then see the below solutions.
-    
+        
     * error: roi_pooling_op.cu.o: No such file or directory
     
       First, check the version of CUDA and cudnn. Then, add to your path(or you can also add the path in ~/.bashrc.).
     
-     ```Shell
-     export PATH="/usr/local/cuda-8.0/bin:$PATH"
-     ```
+      ```Shell
+      export PATH="/usr/local/cuda-8.0/bin:$PATH"
+      ```
     
-    * error: fatal error: math_functions.hpp: No such file or directory
+    * error: fatal error: math_functions.hpp: No such file or directory
     
       [Ref: https://github.com/tensorflow/tensorflow/issues/15389]
     
       Make a softlink from /usr/local/cuda-9.1/include/crt/math_functions.hpp to /usr/local/cuda-9.1/include/math_functions.hpp
     
       ```Shell
-      cd /usr/local/cuda-9.1/include 
-      ln -s ./crt/math_functions.hpp ./math_functions.hpp
+      cd /usr/local/cuda-9.1/include
+      ln -s ./crt/math_functions.hpp ./math_functions.hpp
       ```
-    
+      
     * error: #error Do not use this file, it is the result of a failed Cython compilation.
     
       [Ref: https://github.com/rbgirshick/py-faster-rcnn/issues/647]
     
-      install cython, then make again.
+      Install cython, then make again.
     
       ```Shell
       source activate ModMan
@@ -125,11 +125,11 @@ For running the recognition module, GPU memory is needed.
     
     Move models folder to $FRCN
 
-6. Set path and run the program
+6. Set paths and run the program
 
-    Change PATH_BASE in $FRCN/yochin_tools/yo_network_info.py to become the real path to $FRCN.
+    In $FRCN/yochin_tools/yo_network_info.py, change the variable PATH_BASE to become the real path to $FRCN.
     
-    In the main code my_demo_tf_wPoseEst_conSKKUKIST.py.
+    In $FRCN/yochin_tools/my_demo_tf_wPoseEst_conSKKUKIST.py (this is the main code), edit followings.
 
     If you don't want to use realsense, then comment line 41.
     
@@ -137,21 +137,24 @@ For running the recognition module, GPU memory is needed.
     # import pyrealsense as pyrs
     ```
     
-    If you use the program as a server (receiving images from the client PC), then    
+    * If you use the program as a server (receiving images from the client PC), then    
     
-    In line 449, INPUT_TYPE = 5
-    In line 459, extMat = getCamIntParams('client')
-    In line 1051 and 1052, IP address and port number should be set.
+      In line 449, INPUT_TYPE = 5
+      
+      In line 459, extMat = getCamIntParams('client')
+      
+      In line 1051 and 1052, IP address and port number should be set.
     
-    If you use the program as a standalone program using web camera,
+    * If you use the program as a standalone program using web camera,
     
-    In line 449, INPUT_TYPE = 0
-    In line 459, extMat = getCamIntParams('') <-- select the proper camera name.
+      In line 449, INPUT_TYPE = 0
+      
+      In line 459, extMat = getCamIntParams('') <-- select the proper camera name.
 
-    If you set all parameters, then run the program.
-    ```Shell
-    python my_demo_tf_wPoseEst_conSKKUKIST.py
-    ```
+    * If you set all parameters, then run the program.
+      ```Shell
+      python my_demo_tf_wPoseEst_conSKKUKIST.py
+      ```
     
 ### Errors
 

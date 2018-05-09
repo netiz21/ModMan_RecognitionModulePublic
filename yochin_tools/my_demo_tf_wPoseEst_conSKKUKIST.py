@@ -19,7 +19,7 @@ from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 
 # ModMan module & Pose estimation
-from PoseEst.Function_Pose_v2 import *
+from PoseEst.Function_Pose_v1 import *
 import math
 
 import tensorflow as tf
@@ -446,7 +446,7 @@ if __name__ == '__main__':
     '''
     Settings
     '''
-    INPUT_TYPE = 0      # 0: WebCamera,
+    INPUT_TYPE = 5      # 0: WebCamera,
                         # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
@@ -455,9 +455,12 @@ if __name__ == '__main__':
                         # 6: Realsense Camera
     USE_POSEESTIMATE = True
 
+    AR_IP = '129.254.87.77'
+    AR_PORT = 8020
+
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
-        # extMat = getCamIntParams('client')
-        extMat = getCamIntParams('C920')#
+        extMat = getCamIntParams('client')
+        # extMat = getCamIntParams('C920')#
 
     DO_WRITE_RESULT_AVI = False
     name_output_avi = 'output.avi'
@@ -1048,8 +1051,6 @@ if __name__ == '__main__':
         '''
         Server Info
         '''
-        AR_IP = '129.254.87.77'
-        AR_PORT = 8020
         AR_ADDR = (AR_IP, AR_PORT)
         AR_serverSocket = socket(AF_INET, SOCK_STREAM)
         AR_serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
