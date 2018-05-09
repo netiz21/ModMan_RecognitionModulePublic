@@ -77,40 +77,45 @@ For running the recognition module, GPU memory is needed.
 4. Download and compile Faster-RCNN_TF based ModMan recognition module
 
     ```Shell
+    // Let $FRCN as the downloaded folder name.
     git clone https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git
-    ```
     
-    Let $FRCN as the downloaded folder name.
-
-    ```Shell
     source activate ModMan
     cd $FRCN/lib
     make
     ```
-
+    
     If you meet an error while compiling, then see the below solutions.
     
     * error: roi_pooling_op.cu.o: No such file or directory
     
-    add to your path.
-    export PATH="/usr/local/cuda-8.0/bin:$PATH"
-    If you are using other version of CUDA, then modify the CUDA path.
+      First, check the version of CUDA and cudnn. Then, add to your path(or you can also add the path in ~/.bashrc.).
     
-    Or you can also add the path in ~/.bashrc.
+     ```Shell
+     export PATH="/usr/local/cuda-8.0/bin:$PATH"
+     ```
     
     * error: fatal error: math_functions.hpp: No such file or directory
-    [Ref: https://github.com/tensorflow/tensorflow/issues/15389]
-    Make a softlink from /usr/local/cuda-9.1/include/crt/math_functions.hpp to /usr/local/cuda-9.1/include/math_functions.hpp
-    at /usr/local/cuda-9.1/include    
-    ln -s ./crt/math_functions.hpp ./math_functions.hpp
+    
+      [Ref: https://github.com/tensorflow/tensorflow/issues/15389]
+    
+      Make a softlink from /usr/local/cuda-9.1/include/crt/math_functions.hpp to /usr/local/cuda-9.1/include/math_functions.hpp
+    
+      ```Shell
+      cd /usr/local/cuda-9.1/include 
+      ln -s ./crt/math_functions.hpp ./math_functions.hpp
+      ```
     
     * error: #error Do not use this file, it is the result of a failed Cython compilation.
-    [Ref: https://github.com/rbgirshick/py-faster-rcnn/issues/647]
-    install cython, then make again.
-    ```Shell
-    source activate ModMan
-    conda install -c anaconda cython
-    ```
+    
+      [Ref: https://github.com/rbgirshick/py-faster-rcnn/issues/647]
+    
+      install cython, then make again.
+    
+      ```Shell
+      source activate ModMan
+      conda install -c anaconda cython
+      ```
     
 5. Download trained model
 
