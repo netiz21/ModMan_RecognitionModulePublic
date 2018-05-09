@@ -143,7 +143,7 @@ For running the recognition module, GPU memory is needed.
       
       In line 459, extMat = getCamIntParams('client')
       
-      In line 1051 and 1052, IP address and port number should be set.
+      In line 458 and 459, AR_IP(IP address) and AR_PORT(port number) should be set.
     
     * If you use the program as a standalone program using web camera,
     
