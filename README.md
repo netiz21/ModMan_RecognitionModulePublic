@@ -87,7 +87,7 @@ For running the recognition module, GPU memory is needed.
     
     If you meet an error while compiling, then see the below solutions.
         
-    * error: roi_pooling_op.cu.o: No such file or directory
+    4.1 error: roi_pooling_op.cu.o: No such file or directory
     
       First, check the version of CUDA and cudnn. Then, add to your path(or you can also add the path in ~/.bashrc.).
     
@@ -95,7 +95,7 @@ For running the recognition module, GPU memory is needed.
       export PATH="/usr/local/cuda-8.0/bin:$PATH"
       ```
     
-    * error: fatal error: math_functions.hpp: No such file or directory
+    4.2 error: fatal error: math_functions.hpp: No such file or directory
     
       [Ref: https://github.com/tensorflow/tensorflow/issues/15389]
     
@@ -106,7 +106,7 @@ For running the recognition module, GPU memory is needed.
       ln -s ./crt/math_functions.hpp ./math_functions.hpp
       ```
       
-    * error: #error Do not use this file, it is the result of a failed Cython compilation.
+    4.3 error: #error Do not use this file, it is the result of a failed Cython compilation.
     
       [Ref: https://github.com/rbgirshick/py-faster-rcnn/issues/647]
     
@@ -137,7 +137,7 @@ For running the recognition module, GPU memory is needed.
     # import pyrealsense as pyrs
     ```
     
-    * If you use the program as a server (receiving images from the client PC), then    
+    6.1 If you use the program as a server (receiving images from the client PC), then    
     
       In line 449, INPUT_TYPE = 5
       
@@ -145,13 +145,13 @@ For running the recognition module, GPU memory is needed.
       
       In line 458 and 459, AR_IP(IP address) and AR_PORT(port number) should be set.
     
-    * If you use the program as a standalone program using web camera,
+    6.2 If you use the program as a standalone program using web camera,
     
       In line 449, INPUT_TYPE = 0
       
       In line 459, extMat = getCamIntParams('') <-- select the proper camera name.
 
-    * If you set all parameters, then run the program.
+    6.3 If you set all parameters, then run the program.
       ```Shell
       python my_demo_tf_wPoseEst_conSKKUKIST.py
       ```
