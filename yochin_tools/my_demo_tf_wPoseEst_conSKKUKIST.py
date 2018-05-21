@@ -282,9 +282,16 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                             # tvec = outtvecs
 
                             # return for KIST
-                            obj_info = {'object': class_name, 'score': score, 'RMat': rmat,
-                                        'TVec': tvec, 'x_center': (bbox[0] + bbox[2]) / 2,
-                                        'y_center': (bbox[1] + bbox[3]) / 2}
+                            obj_info = {'object': class_name,
+                                        'score': score,
+                                        'RMat': rmat,
+                                        'TVec': tvec,
+                                        'x_center': (bbox[0] + bbox[2]) / 2,
+                                        'y_center': (bbox[1] + bbox[3]) / 2,
+                                        'left': bbox[0],
+                                        'top': bbox[1],
+                                        'right': bbox[2],
+                                        'bottom': bbox[3]}
                             ret_list_forKIST.append(obj_info)
 
                             print('\tRot info: ')
@@ -430,6 +437,13 @@ def getCamIntParams(nameDevice):
         extMat[0, 2] = 815.355  # py
         extMat[1, 2] = 1096.002  # px
         extMat[2, 2] = 1
+    elif nameDevice == 'SR300':
+        print('Set SR300 intrinsic param')
+        extMat[0, 0] = 620.330732  # fy
+        extMat[1, 1] = 617.397217  # fx
+        extMat[0, 2] = 241.907642  # py
+        extMat[1, 2] = 321.188038  # px
+        extMat[2, 2] = 1
     elif nameDevice == 'client':
         print('Get intrinsic param from the client PC')
 
@@ -446,13 +460,14 @@ if __name__ == '__main__':
     '''
     Settings
     '''
-    INPUT_TYPE = 5      # 0: WebCamera,
+    INPUT_TYPE = 7      # 0: WebCamera,
                         # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
                         # 4: Network input from ETRI(as client),
-                        # 5: working as server,
+                        # 5: working as server for IPad,
                         # 6: Realsense Camera
+                        # 7: working as server for SR300
     USE_POSEESTIMATE = True
 
     AR_IP = '129.254.87.77'
@@ -847,7 +862,7 @@ if __name__ == '__main__':
                 KIST_clientSocket.send(msg)
                 print('send _%s_ to KIST'%(msg))
     elif INPUT_TYPE == 2:
-        # strImageFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/Images'  # Single Object image files
+        # strImageFolder = '/media/yochin/ModMan_DB/ModMan_DB/ETRI_HMI/real_data_label_set_Total/ModMan_SLSv1/data_realDB/Images'  # Single Object image files
         # strImageFolder = '../debug_dropbox_upload/test'
         strImageFolder = '../realDB'
         strPathResult = './dummy'
@@ -1307,6 +1322,280 @@ if __name__ == '__main__':
                                                                                               int(obj_AR['y_center']))
                         print('x_center: %d' % (int(obj_AR['x_center'])))
                         print('y_center: %d' % (int(obj_AR['y_center'])))
+
+                    msg = msg + 'MME'
+
+                    # for list_objs
+                    AR_clientSocket.send(msg)
+                    print('send _%s_ to AR server' % (msg))
+    elif INPUT_TYPE == 7:
+        # working as a server for SR300
+        '''
+        Server Info
+        '''
+        AR_ADDR = (AR_IP, AR_PORT)
+        AR_serverSocket = socket(AF_INET, SOCK_STREAM)
+        AR_serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        AR_serverSocket.bind(AR_ADDR)
+
+        extMat = getCamIntParams('SR300')
+
+        GET_PARAMS_MORE = False
+        if np.sum(np.abs(extMat)) == 0:     # if extMat has all zeros, then get intrisic params from client PC.
+            GET_PARAMS_MORE = True
+
+        '''
+        Data Info
+        '''
+        AR_IMG_WIDTH = 640
+        AR_IMG_HEIGHT = 480
+        AR_NET_BUFSIZE = (AR_IMG_WIDTH * AR_IMG_HEIGHT * 3 + 6)
+
+        LEN_PARAM_INFO = 0
+        if GET_PARAMS_MORE == True:
+            # fx, fy, cx, cy = 4 float numbers = 4 * 4 Bytes = 16 Bytes
+            LEN_PARAM_INFO = 4*4
+            AR_NET_BUFSIZE = AR_NET_BUFSIZE + LEN_PARAM_INFO
+
+        while True: # disconnect -> wait new connection
+            print('Server: waiting of client connection')
+            AR_serverSocket.listen(5)
+            AR_serverSocket.settimeout(5)  # sec.
+
+            try:
+                AR_clientSocket, clientAddr = AR_serverSocket.accept()
+            except timeout:
+                print('Server: timeout. wait the client, again')
+                continue
+
+            print('Server: connected to the client (%s:%s)' % clientAddr)
+
+            CONNECTED = True
+            while CONNECTED == True: # do image -> get info without interception.
+                n_stacked_result = 0
+                while CONNECTED == True:
+                    ing_rcv = False
+                    len_rcv = 0
+                    len_rcv_info = 0
+
+                    do_capture_success = False
+
+                    # get a one image
+                    while CONNECTED == True:
+                        try:
+                            print('Server: try to receive')
+                            data = AR_clientSocket.recv(AR_NET_BUFSIZE)
+                            # print('received %d'%(len(data)))
+                        except error, e:
+                            if isinstance(e.args, tuple):
+                                print "Server: errno is %d" % e[0]
+                                if e.errno == errno.EPIPE:
+                                    # remote peer disconnected
+                                    print "Server: detected remote disconnect"
+                                elif e.errno == errno.ECONNRESET:
+                                    print 'Server: disconnected'
+                                else:
+                                    # determine and handle different error
+                                    print "socket error ", e
+                                    pass
+                            else:
+                                print "socket error ", e
+
+                            CONNECTED = False
+                            AR_clientSocket.close()
+
+                                # socket.timeout:
+                        if len(data) == 0:
+                            print('Server: we guess the client is disconnected.')
+                            CONNECTED = False
+                            AR_clientSocket.close()
+
+                        #     CONNECTED = False
+                        #     print('Server: Connection with client is timeout.')
+                        #     socket.close()
+                        #
+                        #     break
+                        # except socket.EPIPE:
+                        #     CONNECTED = False
+                        #     print('Server: Connection with client is disconnected.')
+                        #
+                        #     break
+
+                        if ing_rcv == False and 'MMS' in data:  # first receive
+                            ing_rcv = True
+
+                            index_start = data.index('MMS')
+
+                            if GET_PARAMS_MORE == True and len_rcv_info == 0:
+                                data_params = copy.copy(data[index_start + 3: index_start + 3 + LEN_PARAM_INFO])
+
+                                fx = struct.unpack('f', data_params[:4])[0]        # fx
+                                fy = struct.unpack('f', data_params[4:8])[0]       # fy
+                                px = struct.unpack('f', data_params[8:12])[0]      # px
+                                py = struct.unpack('f', data_params[12:])[0]       # py
+
+                                # KinectV2
+                                print('Set intrinsic param: fxfy (%f, %f), pxpy (%f, %f)'%(fx, fy, px, py))
+                                extMat[0, 0] = fy  # fy
+                                extMat[1, 1] = fx  # fx
+                                extMat[0, 2] = py  # py
+                                extMat[1, 2] = px  # px
+                                extMat[2, 2] = 1
+
+
+                                len_rcv_info = LEN_PARAM_INFO
+                                index_start = index_start + LEN_PARAM_INFO
+
+                            fid_bin = open('./skku_img.bin', 'wb')
+
+                            if 'MME' not in data:               # not include end point
+                                fid_bin.write(data[index_start + 3:])
+                                len_rcv = len_rcv + len(data[index_start + 3:])
+                            else:                               # if include end point
+                                index_end = data.index('MME')
+                                fid_bin.write(data[index_start + 3:index_end])
+                                fid_bin.close()
+                                print('final: %d == %d'%(AR_NET_BUFSIZE-6-LEN_PARAM_INFO, len_rcv))
+
+                                len_rcv = 0
+
+                                img = np.fromfile('./skku_img.bin', dtype='uint8')
+
+                                if len(img) != AR_IMG_HEIGHT * AR_IMG_WIDTH * 3:
+                                    print('captured image size is not same with predefined')
+                                    do_capture_success = False
+                                else:
+                                    img = img.reshape(AR_IMG_HEIGHT, AR_IMG_WIDTH, 3)
+                                    do_capture_success = True
+                                break
+                        elif ing_rcv == True:                   # receive again.
+                            if ('MME' in data) and (data.index('MME') + len_rcv == AR_IMG_WIDTH * AR_IMG_HEIGHT * 3):
+                                ing_rcv = False
+                                index_end = data.index('MME')
+                                fid_bin.write(data[:index_end])
+                                fid_bin.close()
+
+                                len_rcv = len_rcv + len(data[:index_end])
+                                print('final: %d == %d' % (AR_NET_BUFSIZE-6, len_rcv))
+
+                                len_rcv = 0
+
+                                img = np.fromfile('./skku_img.bin', dtype='uint8')
+
+                                if len(img) != AR_IMG_HEIGHT * AR_IMG_WIDTH * 3:
+                                    print('captured image size is not predefined size')
+                                    do_capture_success = False
+                                else:
+                                    img = img.reshape(AR_IMG_HEIGHT, AR_IMG_WIDTH, 3)
+                                    do_capture_success = True
+
+                                break
+                            else:
+                                fid_bin.write(data)
+                                len_rcv = len_rcv + len(data)
+
+                                # print(data)
+                        # print('intermediate: %d == %d' % (AR_NET_BUFSIZE, len_rcv))
+
+                    print('Server: received image')
+
+                    # # do ETRI job
+                    # # # temp
+                    # img = np.fromfile('./skku_img.bin', dtype='uint8')
+                    # img = img.reshape(AR_IMG_WIDTH, AR_IMG_HEIGHT, 3)
+                    # do_capture_success = True
+
+                    if do_capture_success is True:
+                        # img = np.array(np.rot90(img))
+                        # img = img.copy()
+
+
+                        cv2.imshow('display', img)
+                        cv2.waitKey(10)
+
+                        if DO_WRITE_RESULT_IMG == True:
+                            timestamp = get_curtime_as_string()
+                            cv2.imwrite('../debug_dropbox_upload/%s.png'%timestamp, img)
+                            print('captured %s image', timestamp)
+
+                        cv2.imwrite('./debug_img.png', img)
+
+                        if USE_POSEESTIMATE is True:
+                            img, list_objs_forAR, _ = demo_all(sess, net, img, '', extMat, FeatureDB, CoorDB, GeoDB)
+                        else:
+                            demo_all(sess, net, img, '')
+
+                        if DO_WRITE_RESULT_IMG == True:
+                            cv2.imwrite('../debug_dropbox_upload/%s_est.png' % timestamp, img)
+
+                            fid_info = open('../debug_dropbox_upload/%s_est.txt' % timestamp, 'w')
+                            print >> fid_info, list_objs_forAR
+                            fid_info.close()
+
+                            print('save dummy image as a file')
+
+
+                        # # temp - start
+                        # list_objs_forAR = []
+                        # obj_info = {'object': 'Hello', 'score': 100.,
+                        #             'RMat': np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+                        #             'TVec': np.array([[10], [20], [30]]),
+                        #             'x_center': 100, 'y_center': 200}
+                        # list_objs_forAR.append(obj_info)
+                        # # temp - end
+                    else:
+                        print('no frame\n')
+
+                    do_capture_success = False
+
+                    if CONNECTED == False:
+                        break
+
+                    # cv2.imshow('frame', frame)
+
+                    input_key = cv2.waitKey(10)
+
+                    if len(list_objs_forAR) > 0:
+                        n_stacked_result = n_stacked_result + 1
+
+                    if n_stacked_result >= avgwindow:
+                        break
+
+                # send to kist
+                # 4 byte: num of object (int)
+                # 1 byte: obj ID (char)
+                # 4 * (9 + 3) = 48 bytes = rot + trans mat
+                # 4 * 2 = 8 bytes = x, y
+
+                if CONNECTED == True:
+                    msg = 'MMS'
+                    msg = msg + struct.pack('i', len(list_objs_forAR))  # int
+                    print('num of objs: %d' % len(list_objs_forAR))
+
+                    for obj_AR in list_objs_forAR:
+                        msg = msg + struct.pack('c', obj_AR['object'][0])
+                        print('obj name: %c' % obj_AR['object'][0])
+
+                        for j_RMat in range(0, 3):
+                            for i_RMat in range(0, 3):
+                                msg = msg + struct.pack('f', obj_AR['RMat'][i_RMat][j_RMat])
+                        print('RMat:')
+                        print(obj_AR['RMat'])
+
+                        for j_TVec in range(0, 3):
+                            msg = msg + struct.pack('f', obj_AR['TVec'][j_TVec][0])
+                        print('TVec:')
+                        print(obj_AR['TVec'])
+
+                        msg = msg + struct.pack('i', int(obj_AR['left'])) \
+                                  + struct.pack('i', int(obj_AR['top'])) \
+                                  + struct.pack('i', int(obj_AR['right'])) \
+                                  + struct.pack('i', int(obj_AR['bottom']))
+
+                        print('left: %d' % (int(obj_AR['left'])))
+                        print('top: %d' % (int(obj_AR['top'])))
+                        print('right: %d' % (int(obj_AR['right'])))
+                        print('bottom: %d' % (int(obj_AR['bottom'])))
 
                     msg = msg + 'MME'
 

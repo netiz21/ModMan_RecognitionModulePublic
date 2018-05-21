@@ -141,8 +141,6 @@ def yo_make_directory(path):
         os.makedirs(path)
 
 if __name__ == '__main__':
-    INPUT_TYPE = 2  #0: Camera, 2: Image
-
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
@@ -157,19 +155,10 @@ if __name__ == '__main__':
     # cfg.TEST.RPN_POST_NMS_TOP_N = 2000
     # # Max pixel size of the longest side of a scaled input image
 
-    if INPUT_TYPE == 0:     # Camera
-        cfg.TEST.SCALES = (1200, )  # only one for test  ,480, 576, 688, 864, 1200
-        CONF_THRESH = 0.8
-    elif INPUT_TYPE == 2:   # Image
-        cfg.TEST.SCALES = (600,)  # only one for test
-
-    if INPUT_TYPE == 0:
-        cap = cv2.VideoCapture(0)
-        # cap.set(3, 640*2)
-        # cap.set(4, 480*2)
+    cfg.TEST.SCALES = (600,)  # only one for test
 
     tfArch = 'VGGnetslsv1_test'  # prototxt
-    prjName = 'VGGnet-RealSingle_SynthMultiObj23'
+    prjName = 'VGGnet-RealSingle_SynthMultiObj234'
     tfmodel = '../output/%s/train/VGGnet_fast_rcnn_iter_70000.ckpt'%prjName  # real db
 
     # init session
@@ -188,79 +177,52 @@ if __name__ == '__main__':
     for i in xrange(2):
         _, _ = im_detect(sess, net, im)
 
-    if INPUT_TYPE == 0:
-        while (True):
-            ret, frame = cap.read()
+    if False:
+        # TestDB - MultiObjectReal-181
+        strBasePath = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/MultiObjectReal-181'
+        strImageFolder  = os.path.join(strBasePath, 'Images/')       # 181 multiple objects image files
+        strListfilePath = os.path.join(strBasePath, 'ImageSets/test.txt')
+        strGndFolder    = os.path.join(strBasePath, 'Annotations/xml/')  # compare with this groundtruth
 
-            if ret is True:
-                demo_all(sess, net, frame, '')
-            else:
-                print('no frame\n')
+        strPathResult = '/home/yochin/Desktop/PlayGround_ModMan/EstResult/%s/MultiObjectReal-181/'%prjName         # will save the result xml
+        strPathResultSummary = os.path.join(strPathResult, 'Summary')
+    else:
+        # TestDB - SingleObjectReal-1176
+        strBasePath = '/media/yochin/0d71bed3-b968-40a1-a28d-bf12275c6299/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB'
+        strImageFolder  = os.path.join(strBasePath, 'Images')  # Single Object image files
+        strListfilePath = os.path.join(strBasePath, 'ImageSets/readlSingleObject-10375/test.txt')
+        strGndFolder    = os.path.join(strBasePath, 'Annotations/')  # compare with this groundtruth
 
-            # cv2.imshow('frame', frame)
-            input_key = cv2.waitKey(1)
+        strPathResult = '../EstResult/%s/SingleObjectReal'%prjName         # will save the result xml
+        strPathResultSummary = os.path.join(strPathResult, 'Summary')
 
-            if input_key == ord('q'):
-                break
-            elif input_key == ord('w'):
-                CONF_THRESH = CONF_THRESH + 0.1
-                print(CONF_THRESH)
-            elif input_key == ord('s'):
-                CONF_THRESH = CONF_THRESH - 0.1
-                print(CONF_THRESH)
-            elif input_key == ord('c'):
-                timestamp = '%d_%d_%d_%d_%d_%d_%d'%(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second, datetime.now().microsecond)
-                cv2.imwrite('./%s.jpg'%timestamp, frame)
-                print('captured %s image', timestamp)
+    yo_make_directory(strPathResult)
+    yo_make_directory(strPathResultSummary)
 
-        cap.release()
-        cv2.destroyAllWindows()
+    if True:
+        # From list file
+        listTestFiles = read_list_linebyline(strListfilePath)
+    else:
+        # From image file
+        listTestFiles1 = list_files(strImageFolder, 'bmp')
+        listTestFiles2 = list_files(strImageFolder, 'jpg')
+        listTestFiles = []
+        listTestFiles.extend(listTestFiles1)
+        listTestFiles.extend(listTestFiles2)
 
-    elif INPUT_TYPE == 2:
-        if False:
-            # TestDB - MultiObjectReal-181
-            strImageFolder =  '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/MultiObjectReal-181/Images/'       # 181 multiple objects image files
-            strListfilePath = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/MultiObjectReal-181/ImageSets/test.txt'
-            strGndFolder =    '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/MultiObjectReal-181/Annotations/xml/'  # compare with this groundtruth
+    for filenameExt in listTestFiles:
+        filename = os.path.splitext(filenameExt)[0]
+        filenameExt = filename + '.jpg'
 
-            strPathResult = '/home/yochin/Desktop/PlayGround_ModMan/EstResult/%s/MultiObjectReal-181/'%prjName         # will save the result xml
-            strPathResultSummary = os.path.join(strPathResult, 'Summary')
-        else:
-            # TestDB - SingleObjectReal-1176
-            strImageFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/Images'  # Single Object image files
-            strListfilePath = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/ImageSets/readlSingleObject-10375/test.txt'
-            strGndFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/Annotations/'  # compare with this groundtruth
+        print 'Demo for data/demo/{}'.format(filenameExt)
+        plt.close('all')
+        if os.path.isfile(os.path.join(strImageFolder, filenameExt)):
+            # Load the demo image
+            im = cv2.imread(os.path.join(strImageFolder, filenameExt))
+            demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'))
+            # cv2.waitKey(0)
 
-            strPathResult = '/home/yochin/Desktop/PlayGround_ModMan/EstResult/%s/SingleObjectReal'%prjName         # will save the result xml
-            strPathResultSummary = os.path.join(strPathResult, 'Summary')
-
-        yo_make_directory(strPathResult)
-        yo_make_directory(strPathResultSummary)
-
-        if True:
-            # From list file
-            listTestFiles = read_list_linebyline(strListfilePath)
-        else:
-            # From image file
-            listTestFiles1 = list_files(strImageFolder, 'bmp')
-            listTestFiles2 = list_files(strImageFolder, 'jpg')
-            listTestFiles = []
-            listTestFiles.extend(listTestFiles1)
-            listTestFiles.extend(listTestFiles2)
-
-        for filenameExt in listTestFiles:
-            filename = os.path.splitext(filenameExt)[0]
-            filenameExt = filename + '.jpg'
-
-            print 'Demo for data/demo/{}'.format(filenameExt)
-            plt.close('all')
-            if os.path.isfile(os.path.join(strImageFolder, filenameExt)):
-                # Load the demo image
-                im = cv2.imread(os.path.join(strImageFolder, filenameExt))
-                demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'))
-                # cv2.waitKey(0)
-
-        check_mAP_V2.check_mAP(CLASSES[1:]+('orange',), strListfilePath, strGndFolder, strPathResult, strPathResultSummary, False)
-        # check_mAP_V2.check_mAP(CLASSES[1:]+('strawberry', 'papermate', 'highland', 'genuine', 'mark', 'expo', 'champion', 'apple', 'cup', 'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup', 'drill', 'waffle', 'ace', 'moncher', 'chococo', 'orange',), strListfilePath, strGndFolder, strPathResult, strPathResultSummary, False)
-
-
+    check_mAP_V2.check_mAP(CLASSES[1:]+('orange',), strListfilePath, strGndFolder, strPathResult, strPathResultSummary, False)
+    # check_mAP_V2.check_mAP(CLASSES[1:]+('strawberry', 'papermate', 'highland', 'genuine', 'mark', 'expo', 'champion', 'apple', 'cup', 'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup', 'drill', 'waffle', 'ace', 'moncher', 'chococo', 'orange',), strListfilePath, strGndFolder, strPathResult, strPathResultSummary, False)
+    check_mAP_V2.check_mAP(CLASSES[1:]+('orange',), strListfilePath, strGndFolder, strPathResult,
+                           strPathResultSummary, False, check_only_recog = True)

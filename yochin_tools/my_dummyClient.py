@@ -66,7 +66,7 @@ def capture_and_send_recv(soc, USE_FAKE_CAPTURE=False):
 
             num_objs = struct.unpack('i', data[index_start+3:index_start+7])[0]
 
-            len_one_obj = 1 + 48 + 8
+            len_one_obj = 1 + 48 + 16   # c + float x (9 + 3) + int x 4
             for iObj in range(num_objs):
                 data_one_obj = data[index_start+7+iObj*len_one_obj : index_start+7+(iObj+1)*len_one_obj]
 
@@ -83,23 +83,27 @@ def capture_and_send_recv(soc, USE_FAKE_CAPTURE=False):
                     value = struct.unpack('f', data_one_obj[37+j*4 : 37+(j+1)*4])  # 12 bytes
                     print('%f '%value)
 
-                print('X, Y: \n')
+                print('left, top, right, bottom: \n')
                 value = struct.unpack('i', data_one_obj[49:53])
                 print('%d '%value)
                 value = struct.unpack('i', data_one_obj[53:57])
+                print('%d ' % value)
+                value = struct.unpack('i', data_one_obj[57:61])
+                print('%d ' % value)
+                value = struct.unpack('i', data_one_obj[61:65])
                 print('%d ' % value)
 
     return True
 
 if __name__ == '__main__':
     DO_AS_SERVER = False # False == as client
-    USE_FAKE_CAPTURE = True
+    USE_FAKE_CAPTURE = False
 
     '''
     data info
     '''
-    IMG_WIDTH = 320
-    IMG_HEIGHT = 240
+    IMG_WIDTH = 640
+    IMG_HEIGHT = 480
     NET_BUFSIZE = (IMG_WIDTH * IMG_HEIGHT * 3 + 6)
 
     if not USE_FAKE_CAPTURE:
