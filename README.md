@@ -166,10 +166,11 @@ source activate ModMan
 pip install pyyaml
 conda install -c auto easydict
 conda install -c auto scipy
-conda install -c https://conda.anaconda.org/menpo opencv
 conda install -c conda-forge hdf5 
 conda install -c auto matplotlib
 conda install -c anaconda h5py
+conda uninstall opencv
+conda install -c menpo opencv3
 ```
 
 ### Update
