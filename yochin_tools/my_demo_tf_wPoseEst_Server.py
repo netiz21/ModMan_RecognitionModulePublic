@@ -459,6 +459,40 @@ def getCamIntParams(nameDevice):
     return extMat
 
 
+import threading
+
+# https://stackoverflow.com/questions/23828264/how-to-make-a-simple-multithreaded-socket-server-in-python-that-remembers-client
+class ThreadedServer(object):
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((self.host, self.port))
+
+    def listen(self):
+        self.sock.listen(5)
+        while True:
+            client, address = self.sock.accept()
+            client.settimeout(60)
+            threading.Thread(target = self.listenToClient,args = (client, address)).start()
+
+    def listenToClient(self, client, address):
+        size = 1024
+        while True:
+            try:
+                data = client.recv(size)
+                if data:
+                    # Set the response to echo back the recieved data
+                    response = data
+                    client.send(response)
+                else:
+                    raise error('Client disconnected')
+            except:
+                client.close()
+                return False
+
+
 
 
 
@@ -470,21 +504,19 @@ if __name__ == '__main__':
     Settings
     '''
     INPUT_TYPE = 8      # 0: WebCamera,
-                        # 1: Network input from SKKU CAM,
-                        # 2: Image,
-                        # 3: Video,
-                        # 4: Network input from ETRI(as client),
-                        # 5: working as server for IPad,
+                        # 3: Video
                         # 6: Realsense Camera
+
+                        # 5: working as server for IPad,
                         # 7: working as server for SR300
     USE_POSEESTIMATE = True
 
-    AR_IP = '129.254.87.77'
-    AR_PORT = 8020
+    # Svr_IP = '129.254.87.77'
+    Svr_IP = socket.gethostname()
+    Svr_PORT = 8020
 
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
         extMat = getCamIntParams('client')
-        # extMat = getCamIntParams('C920')#
 
     DO_WRITE_RESULT_AVI = False
     name_output_avi = 'output.avi'
@@ -569,7 +601,6 @@ if __name__ == '__main__':
         .cad (color aligned on depth)
         .dac (depth aligned on color)
         '''
-
         cam = serv.Device(device_id=0, streams=[pyrs.stream.ColorStream(fps=60),
                                                 pyrs.stream.DepthStream(fps=60)
                                                 # pyrs.stream.CADStream(fps=60),
@@ -580,14 +611,6 @@ if __name__ == '__main__':
         cap = cv2.VideoCapture('/home/yochin/Desktop/demo_avi.mp4')
 
     tfArch = 'VGGnetslsv1_test'  # prototxt
-    # tfArch = 'Resnet50_test'  # prototxt
-    # tfmodel = './output/Resnet50/train/VGGnet_fast_rcnn_iter_140000.ckpt'
-    # tfmodel = './output/Resnet_scriptItself/voc_2007_trainval/Resnet50_iter_140000.ckpt'
-    # tfmodel = '../output/VGGnet_140000_noFlipped_DBV8_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
-    # tfmodel = '../output/VGGnet_140000_Prj-RealSingle10375/train/VGGnet_fast_rcnn_iter_70000.ckpt'    # real db
-    # tfmodel = '../output/VGGnet_140000_noFlipped_DBV11_10obj_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
-    # tfmodel = '../output/2. VGGnet_140000_Prj-RealSingle8883_SynthTwo9150_ExcSponageOrange/train/VGGnet_fast_rcnn_iter_70000.ckpt'  # real db
-    # tfmodel = '../output/VGGnet-RealSingle_SynthMultiObj234/train/VGGnet_fast_rcnn_iter_70000.ckpt'
     tfmodel = '../models/VGGnet_fast_rcnn_iter_70000.ckpt'
 
 
@@ -653,14 +676,6 @@ if __name__ == '__main__':
         while (True):
             ret, frame = cap.read()
 
-            # frame = np.rot90(frame, k=3)
-            #
-            # cv2.namedWindow('Input')
-            # cv2.imshow('Input', frame)
-            # cv2.waitKey
-
-            # frame = cv2.flip(frame, 1)
-
             cv2.imwrite('./debug_img.png', frame)
 
             if ret is True:
@@ -699,407 +714,63 @@ if __name__ == '__main__':
             print('outavi is released')
         cap.release()
         cv2.destroyAllWindows()
-    elif INPUT_TYPE == 1:
-        # # as a client, connect to a KIST server
-        KIST_IP = '192.168.137.13'
-        KIST_PORT= 8000
-        KIST_BUFSIZE = 4096
-        KIST_ADDR = (KIST_IP, KIST_PORT)
-        KIST_clientSocket = socket(AF_INET, SOCK_STREAM)
-
-        try:
-            print('trying to connect the KIST server')
-            KIST_clientSocket.connect(KIST_ADDR)
-        except Exception as e:
-            print('cannot connect the KIST server')
-            sys.exit()
-        print('connected to the KIST server')
-
-        # if we receive the call from kist,
-        # send the request to SKKU server for receiving an image
-        # then calculate the rmat, tvec
-        # tehn send the result to kist
-        SKKU_IMG_WIDTH = 1280
-        SKKU_IMG_HEIGHT = 960
-        SKKU_IP = '192.168.137.5'
-        SKKU_PORT = 9000
-        SKKU_NET_BUFSIZE = (SKKU_IMG_WIDTH * SKKU_IMG_HEIGHT * 3 + 6) * 10
-        SKKU_ADDR = (SKKU_IP, SKKU_PORT)
-        clientSocket = socket(AF_INET, SOCK_STREAM)
-
-        try:
-            print('trying to connect the SKKU server')
-            clientSocket.connect(SKKU_ADDR)
-        except Exception as e:
-            print('cannot connect the SKKU server')
-            sys.exit()
-        print('connected to the SKKU server')
-
-        while True:
-            data = KIST_clientSocket.recv(KIST_BUFSIZE)
-            n_stacked_result = 0
-            # data = 'ETRI'
-
-            if 'ETRI' in data:
-                print('receive _ETRI_ from KIST')
-
-                while True:
-                    ing_rcv = False
-                    len_rcv = 0
-
-                    print('start SKKU')
-                    clientSocket.send('3')  # 1 for streamming, 2 for stopping, 3 for one-shot image
-                    print('send _3_ to SKKU server')
-                    do_capture_success = False
-
-                    while True:
-                        data = clientSocket.recv(SKKU_NET_BUFSIZE)
-
-                        if ing_rcv == False and 'MMS' in data:
-                            ing_rcv = True
-
-                            index_start = data.index('MMS')
-
-                            fid_bin = open('./skku_img.bin', 'wb')
-                            fid_bin.write(data[index_start+3:])
-                            len_rcv = len_rcv + len(data[index_start+3:])
-                        elif ing_rcv == True:
-                            if ('MME' in data) and (data.index('MME') + len_rcv == 960*1280*3):
-                                ing_rcv = False
-                                index_end = data.index('MME')
-                                fid_bin.write(data[:index_end])
-                                fid_bin.close()
-
-                                len_rcv = len_rcv + len(data[:index_end])
-                                # print(len_rcv)
-                                len_rcv = 0
-
-                                img = np.fromfile('./skku_img.bin', dtype='uint8')
-
-                                if len(img) != 960*1280*3:
-                                    print('captured image size is not 960 x 1280 x 3')
-                                    do_capture_success = False
-                                else:
-                                    img = img.reshape(960, 1280, 3)
-                                    do_capture_success = True
-
-                                break
-                            else:
-                                fid_bin.write(data)
-                                len_rcv = len_rcv + len(data)
-
-                        # print(data)
-
-                    print('end SKKU')
-
-                    # # do ETRI job
-                    # # # temp
-                    # img = np.fromfile('./skku_img.bin', dtype='uint8')
-                    # img = img.reshape(960, 1280, 3)
-                    # do_capture_success = True
-
-                    if do_capture_success is True:
-                        # img = cv2.flip(img, 0)
-                        # img2 = img.copy()
-                        # img = (((img.astype(float) / 255.) ** 1.6) * 255).astype('uint8')  # correction
-                        # img[:,:,0] = (img[:,:,0].astype(float)/1.1).astype('uint8')
-
-                        # timestamp = '%d_%d_%d_%d_%d_%d_%d' % (
-                        #     datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour,
-                        #     datetime.now().minute,
-                        #     datetime.now().second, datetime.now().microsecond)
-                        # cv2.imwrite('./%s.jpg' % timestamp, img)
-                        # print('captured %s image', timestamp)
-
-                        if USE_POSEESTIMATE is True:
-                            img, list_objs_forKIST = demo_all(sess, net, img, '', extMat, FeatureDB, CoorDB, GeoDB)
-                        else:
-                            demo_all(sess, net, img, '')
-                    else:
-                        print('no frame\n')
-
-                    do_capture_success = False
-
-                    # cv2.imshow('frame', frame)
-
-                    input_key = cv2.waitKey(10)
-
-                    if len(list_objs_forKIST) > 0:
-                        n_stacked_result = n_stacked_result + 1
-
-                        if n_stacked_result >= avgwindow:
-                            break
-
-                if input_key == ord('q'):
-                    clientSocket.send('2')  # 1 for streamming, 2 for stopping, 3 for one-shot image
-                    print('send 2\n')
-
-                    break
-
-                # send to kist
-                # 4 byte: num of object (int)
-                # 1 byte: obj ID (char)
-                # 4 * (9 + 3) = 48 bytes = rot + trans mat
-                # 4 * 2 = 8 bytes = x, y
-
-                # # temp - start
-                # list_objs_forKIST = []
-                # obj_info = {'object': 'Hello', 'score': 100., 'RMat': np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'TVec': np.array([[10], [20], [30]]),
-                #             'x_center': 100, 'y_center': 200}
-                # list_objs_forKIST.append(obj_info)
-                # # temp - end
-
-                msg = 'MMS'
-                msg = msg + struct.pack('i', len(list_objs_forKIST))  # int
-
-                for obj_KIST in list_objs_forKIST:
-                    msg = msg + struct.pack('c', obj_KIST['object'][0])
-
-                    for j_RMat in range(0, 3):
-                        for i_RMat in range(0, 3):
-                            msg = msg + struct.pack('f', obj_KIST['RMat'][i_RMat][j_RMat])
-
-                    for j_TVec in range(0, 3):
-                        msg = msg + struct.pack('f', obj_KIST['TVec'][j_TVec][0])
-
-                    msg = msg + struct.pack('i', int(obj_KIST['x_center'])) + struct.pack('i', int(obj_KIST['y_center']))
-
-                msg = msg + 'MME'
-
-
-                # for list_objs
-                KIST_clientSocket.send(msg)
-                print('send _%s_ to KIST'%(msg))
-    elif INPUT_TYPE == 2:
-        # strImageFolder = '/media/yochin/ModMan_DB/ModMan_DB/ETRI_HMI/real_data_label_set_Total/ModMan_SLSv1/data_realDB/Images'  # Single Object image files
-        # strImageFolder = '../debug_dropbox_upload/test'
-        strImageFolder = '../realDB'
-        strPathResult = './dummy'
-
-        if not os.path.exists(strPathResult):
-            os.makedirs(strPathResult)
-
-        if False:
-            # From list file
-            strListFilePath = '/media/yochin/0d71bed3-b968-40a1-a28d-bf12275c6299/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/ImageSets/readlSingleObject-10375/test.txt'
-            listTestFiles = read_list_linebyline(strListFilePath)
-        else:
-            # From image file
-            listTestFiles1 = list_files(strImageFolder, 'bmp')
-            listTestFiles2 = list_files(strImageFolder, 'jpg')
-            listTestFiles3 = list_files(strImageFolder, 'png')
-            listTestFiles = []
-            listTestFiles.extend(listTestFiles1)
-            listTestFiles.extend(listTestFiles2)
-            listTestFiles.extend(listTestFiles3)
-
-        for filenameExt in listTestFiles[3:]:
-            filename = os.path.splitext(filenameExt)[0]
-            # filenameExt = filename + '.jpg'
-
-            print 'Demo for data/demo/{}'.format(filenameExt)
-            plt.close('all')
-            if os.path.isfile(os.path.join(strImageFolder, filenameExt)):
-                # Load the demo image
-                im = cv2.imread(os.path.join(strImageFolder, filenameExt))
-                # demo_all(sess, net, im, strPathResult + est_filename)
-                if USE_POSEESTIMATE is True:
-                    demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'), extMat, FeatureDB, CoorDB, GeoDB)
-                else:
-                    demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'))
-
-                # cv2.waitKey(0)
-    elif INPUT_TYPE == 4:
-        # # as a client, connect to a KIST server
-        AR_IP = '127.0.0.1'
-        AR_PORT = 8010
-        AR_ADDR = (AR_IP, AR_PORT)
-        AR_clientSocket = socket(AF_INET, SOCK_STREAM)
-
-        try:
-            print('trying to connect the AR server')
-            AR_clientSocket.connect(AR_ADDR)
-        except Exception as e:
-            print('cannot connect the AR server')
-            sys.exit()
-        print('connected to the AR server')
-
-        AR_IMG_WIDTH = 320
-        AR_IMG_HEIGHT = 240
-        AR_NET_BUFSIZE = (AR_IMG_WIDTH * AR_IMG_HEIGHT * 3 + 6)
-
-        cnt = 0
-        while True:
-            cnt = cnt + 1
-
-            if cnt == 5:
-                break
-            n_stacked_result = 0
-
-            while True:
-                ing_rcv = False
-                len_rcv = 0
-
-                do_capture_success = False
-
-                # get a one image
-                while True:
-                    data = AR_clientSocket.recv(AR_NET_BUFSIZE)
-
-                    if ing_rcv == False and 'MMS' in data:
-                        ing_rcv = True
-
-                        index_start = data.index('MMS')
-
-                        fid_bin = open('./skku_img.bin', 'wb')
-
-                        if 'MME' not in data:
-                            fid_bin.write(data[index_start + 3:])
-                            len_rcv = len_rcv + len(data[index_start + 3:])
-                        else:
-                            index_end = data.index('MME')
-                            fid_bin.write(data[index_start + 3:index_end])
-                            fid_bin.close()
-
-                            len_rcv = 0
-
-                            img = np.fromfile('./skku_img.bin', dtype='uint8')
-
-                            if len(img) != AR_IMG_HEIGHT * AR_IMG_WIDTH * 3:
-                                print('captured image size is not 960 x 1280 x 3')
-                                do_capture_success = False
-                            else:
-                                img = img.reshape(AR_IMG_HEIGHT, AR_IMG_WIDTH, 3)
-                                do_capture_success = True
-                            break
-                    elif ing_rcv == True:
-                        if ('MME' in data) and (data.index('MME') + len_rcv == AR_IMG_WIDTH * AR_IMG_HEIGHT * 3):
-                            ing_rcv = False
-                            index_end = data.index('MME')
-                            fid_bin.write(data[:index_end])
-                            fid_bin.close()
-
-                            len_rcv = len_rcv + len(data[:index_end])
-                            # print(len_rcv)
-                            len_rcv = 0
-
-                            img = np.fromfile('./skku_img.bin', dtype='uint8')
-
-                            if len(img) != 960 * 1280 * 3:
-                                print('captured image size is not 960 x 1280 x 3')
-                                do_capture_success = False
-                            else:
-                                img = img.reshape(960, 1280, 3)
-                                do_capture_success = True
-
-                            break
-                        else:
-                            fid_bin.write(data)
-                            len_rcv = len_rcv + len(data)
-
-                            # print(data)
-
-                print('end AR')
-
-                # # do ETRI job
-                # # # temp
-                # img = np.fromfile('./skku_img.bin', dtype='uint8')
-                # img = img.reshape(960, 1280, 3)
-                # do_capture_success = True
-
-                if do_capture_success is True:
-                    # if USE_POSEESTIMATE is True:
-                    #     img, list_objs_forAR = demo_all(sess, net, img, '', extMat, FeatureDB, CoorDB, GeoDB)
-                    # else:
-                    #     demo_all(sess, net, img, '')
-
-                    # temp - start
-                    cv2.namedWindow('fromNet')
-                    cv2.imshow('fromNet', img)
-                    cv2.waitKey(10)
-
-                    list_objs_forAR = []
-                    obj_info = {'object': 'Hello', 'score': 100.,
-                                'RMat': np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
-                                'TVec': np.array([[10], [20], [30]]),
-                                'x_center': 100, 'y_center': 200}
-                    list_objs_forAR.append(obj_info)
-                    # temp - end
-                else:
-                    print('no frame\n')
-
-                do_capture_success = False
-
-                # cv2.imshow('frame', frame)
-
-                input_key = cv2.waitKey(10)
-
-                if len(list_objs_forAR) > 0:
-                    n_stacked_result = n_stacked_result + 1
-
-                    if n_stacked_result >= avgwindow:
-                        break
-
-            if input_key == ord('q'):
-                break
-
-            # send to kist
-            # 4 byte: num of object (int)
-            # 1 byte: obj ID (char)
-            # 4 * (9 + 3) = 48 bytes = rot + trans mat
-            # 4 * 2 = 8 bytes = x, y
-
-            msg = 'MMS'
-            msg = msg + struct.pack('i', len(list_objs_forAR))  # int
-
-            for obj_AR in list_objs_forAR:
-                msg = msg + struct.pack('c', obj_AR['object'][0])
-
-                for j_RMat in range(0, 3):
-                    for i_RMat in range(0, 3):
-                        msg = msg + struct.pack('f', obj_AR['RMat'][i_RMat][j_RMat])
-
-                for j_TVec in range(0, 3):
-                    msg = msg + struct.pack('f', obj_AR['TVec'][j_TVec][0])
-
-                msg = msg + struct.pack('i', int(obj_AR['x_center'])) + struct.pack('i',
-                                                                                      int(obj_AR['y_center']))
-
-            msg = msg + 'MME'
-
-            # for list_objs
-            AR_clientSocket.send(msg)
-            print('send _%s_ to AR server' % (msg))
-    elif INPUT_TYPE == 5:
+    elif INPUT_TYPE == 8:
         # working as a server
         '''
         Server Info
         '''
-        AR_ADDR = (AR_IP, AR_PORT)
-        AR_serverSocket = socket(AF_INET, SOCK_STREAM)
-        AR_serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        AR_serverSocket.bind(AR_ADDR)
-
         GET_PARAMS_MORE = False
         if np.sum(np.abs(extMat)) == 0:     # if extMat has all zeros, then get intrisic params from client PC.
             GET_PARAMS_MORE = True
 
-        '''
-        Data Info
-        '''
-        AR_IMG_WIDTH = 2224
-        AR_IMG_HEIGHT = 1668
-        AR_NET_BUFSIZE = (AR_IMG_WIDTH * AR_IMG_HEIGHT * 3 + 6)
+        print('Server: waiting of client connection')
+        ThreadedServer(Svr_IP, Svr_PORT).listen()
 
-        LEN_PARAM_INFO = 0
+        # Svr_serverSocket.listen(5)
+
+
+
+
+        '''
+        Data Info - Length for data
+        '''
+        IPAD_IMG_WIDTH = 2224
+        IPAD_IMG_HEIGHT = 1668
+        IPAD_NET_BUFSIZE = (IPAD_IMG_WIDTH * IPAD_IMG_HEIGHT * 3 + 6)
+
+
+
+
+
+    elif INPUT_TYPE == 5:
+        # working as a server
+        # '''
+        # Server Info
+        # '''
+        # AR_ADDR = (AR_IP, AR_PORT)
+        # AR_serverSocket = socket(AF_INET, SOCK_STREAM)
+        # AR_serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        # AR_serverSocket.bind(AR_ADDR)
+
+        # GET_PARAMS_MORE = False
+        # if np.sum(np.abs(extMat)) == 0:     # if extMat has all zeros, then get intrisic params from client PC.
+        #     GET_PARAMS_MORE = True
+
+        '''
+        Data Info - Length for data
+        '''
+        IPAD_IMG_WIDTH = 2224
+        IPAD_IMG_HEIGHT = 1668
+        IPAD_NET_BUFSIZE = (IPAD_IMG_WIDTH * IPAD_IMG_HEIGHT * 3 + 6)
+
         if GET_PARAMS_MORE == True:
             # fx, fy, cx, cy = 4 float numbers = 4 * 4 Bytes = 16 Bytes
             LEN_PARAM_INFO = 4*4
-            AR_NET_BUFSIZE = AR_NET_BUFSIZE + LEN_PARAM_INFO
+            IPAD_NET_BUFSIZE = IPAD_NET_BUFSIZE + LEN_PARAM_INFO
 
         while True: # disconnect -> wait new connection
             print('Server: waiting of client connection')
-            AR_serverSocket.listen(5)
+            Svr_serverSocket.listen(5)
             AR_serverSocket.settimeout(5)  # sec.
 
             try:
@@ -1144,22 +815,10 @@ if __name__ == '__main__':
                             CONNECTED = False
                             AR_clientSocket.close()
 
-                                # socket.timeout:
                         if len(data) == 0:
                             print('Server: we guess the client is disconnected.')
                             CONNECTED = False
                             AR_clientSocket.close()
-
-                        #     CONNECTED = False
-                        #     print('Server: Connection with client is timeout.')
-                        #     socket.close()
-                        #
-                        #     break
-                        # except socket.EPIPE:
-                        #     CONNECTED = False
-                        #     print('Server: Connection with client is disconnected.')
-                        #
-                        #     break
 
                         if ing_rcv == False and 'MMS' in data:  # first receive
                             ing_rcv = True
