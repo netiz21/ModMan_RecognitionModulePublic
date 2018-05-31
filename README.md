@@ -155,9 +155,28 @@ For running the recognition module, GPU memory is needed.
       ```Shell
       python my_demo_tf_wPoseEst_conSKKUKIST.py
       ```
+      
+7. Verify the version of the opencv library is ver.3.2.x.
+      ```Shell
+      python
+      import cv2
+      cv2.__version__
+      ```
+      
+      If the opencv is not imported or the version is not 3.2.x, then remove all opencv and reinstall.
+      ```Shell
+      conda uninstall opencv
+      conda uninstall opencv3
+      conda install -c menpo opencv3
+      ```
+      
+      If you meet an message, "OSError(13, 'Permission denied')", then log in as a superuser.
+      ```Shell
+      sudo bash
+      source activate ModMan
+      ```
     
 ### Errors
-
 If you meet a error message like 'import module error ###', then install that module using one of below commands.
 
 ```Shell
@@ -169,8 +188,6 @@ conda install -c auto scipy
 conda install -c conda-forge hdf5 
 conda install -c auto matplotlib
 conda install -c anaconda h5py
-conda uninstall opencv
-conda install -c menpo opencv3
 ```
 
 ### Update
