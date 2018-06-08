@@ -592,7 +592,10 @@ if __name__ == '__main__':
 
 
     # init session
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
+    sess = tf.Session(
+        config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True, device_count={'GPU': 1}))
+    # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
     tf.device('')
     # load network
     net = get_network(tfArch)
