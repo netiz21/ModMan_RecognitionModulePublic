@@ -119,13 +119,13 @@ For running the recognition module, GPU memory is needed.
     
 5. Download trained model
 
-    Download [DBv1](https://drive.google.com/open?id=1whjx999HjnITSwtCuP849gHVsOz8Ly2S) and [models](https://drive.google.com/open?id=1tVcE0uufb4D5XnUO34HWoqJr2pBainy9).
+    Download [DBv1](https://drive.google.com/open?id=1CS-qci1p3CEP8x1H9CoK8kVmZtYQpl-j).
 
     Move DBv1 folder to $FRCN/yochin_tools/PoseEst
     
     Move models folder to $FRCN
 
-6. Set paths and run the program
+6. Set paths and run the program (for a camera, image, and video input)
 
     In $FRCN/yochin_tools/yo_network_info.py, change the variable PATH_BASE to become the real path to $FRCN.
     
@@ -156,7 +156,18 @@ For running the recognition module, GPU memory is needed.
       python my_demo_tf_wPoseEst_conSKKUKIST.py
       ```
       
-7. Verify the version of the opencv library is ver.3.2.x.
+7. Set paths and run the program (as a server) 
+       
+    In $FRCN/yochin_tools/yo_network_info.py, change the variable PATH_BASE to become the real path to $FRCN.
+       
+    And set the IP address and port number. 
+    
+    * If you set all parameters, then run the program.
+      ```Shell
+      python my_demo_tf_wPoseEst_Server.py
+      ```
+      
+8. Verify the version of the opencv library is ver.3.2.x.
       ```Shell
       python
       import cv2
