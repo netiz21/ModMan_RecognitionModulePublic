@@ -2,13 +2,13 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 import os
-import scipy.io as io    
+import scipy.io as io
 import h5py
 import yo_network_info
 
 basePath = os.path.join(yo_network_info.PATH_BASE, 'yochin_tools/PoseEst/DBv1')
-TH_CORRESPONDENCES = 20
-TH_INLIERS = 10
+TH_CORRESPONDENCES = yo_network_info.POSE_EST_TH_CORRESPONDENCES
+TH_INLIERS = yo_network_info.POSE_EST_TH_INLIERS
 
 def ReadDB(classname) : 
     ftr = io.loadmat(os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1.mat'))
@@ -54,7 +54,7 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
 
         print('\tnum corrs : %d' % (len(good)))
 
-        if len(good) > TH_CORRESPONDENCES:
+        if len(good) >= TH_CORRESPONDENCES:
             objpoints = np.zeros((len(matches),3),np.float32)
             imgpoints=np.zeros((len(matches),2),np.float32)
             tempCoord = np.zeros((1,3),np.float32)
@@ -85,22 +85,13 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
             rvec = np.expand_dims([ 0.04110314, -2.37024752, 0.37337192], axis = 1)
             tvec = np.expand_dims([  42.53222017, 36.96097125, 488.19154566], axis = 1)
             dist = np.array([[0.0, 0.0, 0.0, 0.0]])
+
+            print('do PnPRansac')
             (_, rvec,tvec,inliers)= cv2.solvePnPRansac(objpoints, imgpoints, ret, dist, rvec = rvec, tvec = tvec, reprojectionError=3.0, iterationsCount=1000) # flags = cv2.SOLVEPNP_P3P, rvec=rvec, tvec=tvec, useExtrinsicGuess=True
-            #(_, rvec, tvec) = cv2.solvePnP(objpoints, imgpoints, ret, dist)  # flags = cv2.SOLVEPNP_P3P, iterationsCount=1000, rvec=rvec, tvec=tvec, useExtrinsicGuess=True
-
-            # # for debugging
-            # print(rvec)
-            # print(tvec)
-            # for iii in inliers:
-            #     cv2.circle(img, (int(imgpoints[0,iii,1]-init_coord[0]),int(imgpoints[0,iii,0]-+init_coord[1])), 2,
-            #                (int((objpoints[0,iii, 0] + 100) / 200. * 255.),
-            #                 int((objpoints[0,iii, 1] + 50) / 100. * 255.),
-            #                 int((objpoints[0,iii, 2] + 30) / 60. * 255.), 0), -1)
-
 
             if inliers is not None:
                 print('\tnum inliers : %d' % (len(inliers)))
-                if len(inliers) > TH_INLIERS:
+                if len(inliers) >= TH_INLIERS:
                     # tvec[0] = 0
                     # tvec[2] = -tvec[2]+745
                     # tvec[0] = -tvec[2]
@@ -116,9 +107,11 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
                 rmat = np.zeros((3, 3))
                 tvec = np.zeros((3, 1))
         else:
+            print('\tnum corrs : %d < TH %d' % (len(good), TH_CORRESPONDENCES))
             rmat = np.zeros((3, 3))
             tvec = np.zeros((3, 1))
     except:
+        print('\texcept')
         rmat = np.zeros((3, 3))
         tvec = np.zeros((3, 1))
 

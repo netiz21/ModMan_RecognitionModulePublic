@@ -7,8 +7,8 @@ import h5py
 import yo_network_info
 
 basePath = os.path.join(yo_network_info.PATH_BASE, 'yochin_tools/PoseEst/DBv1')
-TH_CORRESPONDENCES = 20
-TH_INLIERS = 10
+TH_CORRESPONDENCES = yo_network_info.POSE_EST_TH_CORRESPONDENCES
+TH_INLIERS = yo_network_info.POSE_EST_TH_INLIERS
 
 def ReadDB(classname) : 
     ftr = io.loadmat(os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1.mat'))

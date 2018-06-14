@@ -20,7 +20,7 @@ from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 
 # ModMan module & Pose estimation
-from PoseEst.Function_Pose_v1 import *
+from PoseEst.Function_Pose_v3 import *
 import math
 
 import tensorflow as tf
@@ -39,6 +39,7 @@ import logging
 logging.basicConfig(level = logging.INFO)
 
 import select
+from time import sleep
 
 # realsense
 # import pyrealsense as pyrs
@@ -47,7 +48,7 @@ CLASSES = yo_network_info.CLASSES
 Candidate_CLASSES = yo_network_info.Candidate_CLASSES
 NUM_CLASSES = yo_network_info.NUM_CLASSES
 
-CONF_THRESH = 0.6
+CONF_THRESH = yo_network_info.DETECTION_TH
 NMS_THRESH = 0.3
 
 global_do_send_msg = False
@@ -436,34 +437,37 @@ class ThreadedClient(object):
         ret = 0
         buf_size = 3    # 'MME'
         buf_size_intr_params = 0
+        buf_size_PadInfo = 0
         buf_size_RTInfo = 0
 
         cmd = '%c%c'%(struct.unpack('c', cmd_raw[0])[0], struct.unpack('c', cmd_raw[1])[0])
 
         size_iPad_image = 2224 * 1668 * 3
         size_sr300_image = 640 * 480 * 3
-        size_RT = 4 * 12
 
         if len(cmd) == 2:
             if cmd == 'ec': # etri + calibration
                 ret = 1
                 buf_size_intr_params = 4 * 4
-                buf_size_RTInfo = 4 * 12
+                buf_size_PadInfo = 4 * 12
+                buf_size_RTInfo = 0
                 buf_size = buf_size + size_iPad_image
             elif cmd == 'er':
                 ret = 1
                 buf_size_intr_params = 4 * 4
-                buf_size_RTInfo = 4 * 12
+                buf_size_PadInfo = 4 * 12
+                buf_size_RTInfo = 0
                 buf_size = buf_size + size_iPad_image
             elif cmd == 'ed':
                 ret = 1
+                buf_size_PadInfo = 4 * 12
                 buf_size_RTInfo = 4 * 12
                 buf_size = buf_size + 0
             elif cmd == 'ks':
                 ret = 1
                 buf_size = buf_size + size_sr300_image
 
-        return ret, cmd, buf_size_intr_params, buf_size_RTInfo, buf_size
+        return ret, cmd, buf_size_intr_params, buf_size_PadInfo, buf_size_RTInfo, buf_size
 
     def listenToClient(self, clientSocket, address_tuple):
         global global_do_send_msg
@@ -471,6 +475,13 @@ class ThreadedClient(object):
 
         address = address_tuple[0]
         print('Thread start: %s'%address)
+
+        if address == yo_network_info.KIST_STATIC_IP:
+            self.owner = 'k'
+            print('client (%s) was set as KIST'%address)
+        elif address == yo_network_info.ETRI_STATIC_IP:
+            self.owner = 'e'
+            print('client (%s) was set as ETRI'%address)
 
         CONNECTED = True
         while CONNECTED == True:  # do image -> get info without interception.
@@ -487,9 +498,11 @@ class ThreadedClient(object):
             NET_BUFSIZE = 3 + 2     # MMS + cmd(2 bytes)
             cmd = '  '
             info_padPosition = np.zeros((12))
+            info_RT = np.zeros((12))
+
+            print('Server (%s, %c): connected' % (address, self.owner))
 
             while CONNECTED == True:
-                print('Server (%s, %c): connected'%(address, self.owner))
                 try:
                     do_read = False
 
@@ -512,14 +525,28 @@ class ThreadedClient(object):
                             # check there is a data to send
                             if global_do_send_msg == True:
                                 if global_msg['who'] == self.owner:
-                                    print('This is my message')
+                                    print('Server (%s, %c): This is my message'%(address, self.owner))
 
-                                    clientSocket.send(global_msg['msg'])
-                                    print('Server (%s, %c): send to the client'%(address, self.owner))
+                                    # send all in one time
+                                    # clientSocket.send(global_msg['msg'])
+                                    # print('Server (%s, %c): send to the client'%(address, self.owner))
 
+                                    LEN_CHUNK = yo_network_info.LEN_CHUNK
+
+                                    len_send = 0
+                                    for ipack in xrange(0, len(global_msg['msg']), LEN_CHUNK):
+                                        len_send = len_send + clientSocket.send(global_msg['msg'][ipack: ipack + LEN_CHUNK])
+                                        # print('Server (%s, %c): msg sent: len %d, %d' % (
+                                        # address, self.owner, len(global_msg['msg']), len_send))
+                                        sleep(0.004)
+
+
+                                    print('Server (%s, %c): msg sent: len %d, %d' % (address, self.owner, len(global_msg['msg']), len_send))
+
+                                    global_msg = {'msg': [], 'who': ''}
                                     global_do_send_msg = False
-                                    global_msg['who'] = ''
-                                    global_msg['msg'] = []
+
+
 
                 except socket.error, socket.e:
                     if isinstance(socket.e.args, tuple):
@@ -531,7 +558,8 @@ class ThreadedClient(object):
                             print('Server (%s, %c): disconnected'%(address, self.owner))
                         else:
                             # determine and handle different error
-                            print "socket error - type1", socket.e
+                            print("socket error - type1", socket.e)
+                            print('Server (%s, %c): maybe not ready to receive.: '%(address, self.owner))
                     else:
                         print "socket error -type2", socket.e
 
@@ -548,7 +576,7 @@ class ThreadedClient(object):
 
                     index_start = data.index('MMS')
 
-                    suc_cmd, cmd, buf_size_params, buf_size_RTinfo, buf_size = self.parsing_cmd(data[index_start + 3:])
+                    suc_cmd, cmd, buf_size_params, buf_size_PadInfo, buf_size_RTinfo, buf_size = self.parsing_cmd(data[index_start + 3:])
 
                     if suc_cmd == 0:
                         print('Server (%s, %c): client sends incorrect command'%(address, self.owner))
@@ -585,19 +613,29 @@ class ThreadedClient(object):
                         self.IMG_WIDTH = 640
                         self.IMG_HEIGHT = 480
 
-                    if buf_size_RTinfo > 0:
+                    if buf_size_PadInfo > 0:
                         # get more 12 * 4 bytes and decode them
-                        data_RTinfo = clientSocket.recv(12 * 4)
+                        data_dummy = clientSocket.recv(12 * 4)
 
                         for i in range(12):
-                            info_padPosition[i] = struct.unpack('f', data_RTinfo[i*4:i*4+4])[0]  # fx
+                            info_padPosition[i] = struct.unpack('f', data_dummy[i * 4:i * 4 + 4])[0]
+
+                        print('Pad Pos. : ', info_padPosition)
+
+                    if buf_size_RTinfo > 0:
+                        # get more 12 * 4 bytes and decode them
+                        data_dummy = clientSocket.recv(12 * 4)
+
+                        for i in range(12):
+                            info_RT[i] = struct.unpack('f', data_dummy[i*4:i*4+4])[0]  # fx
+
+                        print('Dst Pos.: ', info_RT)
 
                     fid_bin = open('./skku_img.bin', 'wb')
 
                     len_rcv = 0
 
                 elif ing_rcv == True:  # receive again.
-                    print(len_rcv)
                     if ('MME' in data) and (data.index('MME') + len_rcv == buf_size-3):
                         ing_rcv = False
                         index_end = data.index('MME')
@@ -626,7 +664,7 @@ class ThreadedClient(object):
                         # print(data)
                 # print('intermediate: %d == %d' % (AR_NET_BUFSIZE, len_rcv))
 
-            print('Server (%s, %c): received image'%(address, self.owner))
+            print('Server (%s, %c): received data completely'%(address, self.owner))
 
 
             # do ETRI job
@@ -670,23 +708,27 @@ class ThreadedClient(object):
             if CONNECTED == True:
                 if cmd == 'ec':
                     msg = 'MMS'
-                    msg = addPadInfo(msg, info_padPosition, floatType='double')
+                    msg = addCommand(msg, cmd)
+                    msg = addPadRTInfo(msg, info_padPosition, floatType='double')
                     msg = addImage(msg, self.img)
                     msg = msg + 'MME'
 
                     global_msg['msg'] = copy.copy(msg)
                     global_msg['who'] = 'k'
                     global_do_send_msg = True
-                    print('Server (%s, %c): set global msg _%s_'%(address, self.owner, msg))
+                    print('Server (%s, %c): set global msg _%s_'%(address, self.owner, msg[:5]))
                 elif cmd == 'ed':
                     msg = 'MMS'
-                    msg = addPadInfo(msg, info_padPosition, floatType='double')     # this is destination information.
+                    msg = addCommand(msg, cmd)
+                    msg = addPadRTInfo(msg, info_padPosition, floatType='double')
+                    msg = addPadRTInfo(msg, info_RT, floatType='double')
                     msg = msg + 'MME'
 
                     global_msg['msg'] = copy.copy(msg)
                     global_msg['who'] = 'k'
                     global_do_send_msg = True
                     print('Server (%s, %c): set global msg _%s_' % (address, self.owner, msg))
+                    print('Server (%s, %c): (cont.) ' % (address, self.owner), msg[5:5 + 24 * 8])
                 else:
                     # message to loopback.
                     msg = 'MMS'
@@ -705,8 +747,8 @@ class ThreadedClient(object):
                     if cmd == 'er':
                         msg = 'MMS'
                         msg = addCommand(msg, cmd)
-                        msg = addImage(msg, self.img)
-                        msg = addPadInfo(msg, info_padPosition, floatType='double')
+                        # msg = addImage(msg, self.img)
+                        msg = addPadRTInfo(msg, info_padPosition, floatType='double')
                         msg = addListObjs(msg, list_objs_forAR, floatType='double')
                         msg = msg + 'MME'
 
@@ -738,7 +780,7 @@ class ThreadedServer(object):
                              ).start()
 
 
-def addPadInfo(msg, padinfo, floatType):
+def addPadRTInfo(msg, padinfo, floatType):
     if floatType == 'float':
         for i in range(12):
             msg = msg + struct.pack('f', padinfo[i])
@@ -747,6 +789,8 @@ def addPadInfo(msg, padinfo, floatType):
             msg = msg + struct.pack('d', padinfo[i])
     else:
         raise AssertionError('type is incorrect!!!')
+
+    print(padinfo)
 
     return msg
 
@@ -845,9 +889,8 @@ if __name__ == '__main__':
     '''
     USE_POSEESTIMATE = True
 
-    Svr_IP = '129.254.87.77'
-    # Svr_IP = '192.168.137.50'
-    Svr_PORT = 8020
+    Svr_IP = yo_network_info.SERVER_IP
+    Svr_PORT = yo_network_info.SERVER_PORT
 
     DO_WRITE_RESULT_AVI = False
     name_output_avi = 'output.avi'
@@ -856,7 +899,6 @@ if __name__ == '__main__':
 
     # for test
     cfg = setTestCFG(cfg)
-    CONF_THRESH = 0.8
 
     avgwindow = 0   # parameter to show pose estimation in stable
 

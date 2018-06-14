@@ -11,6 +11,7 @@ import numpy as np
 import os, sys
 import socket, errno
 import struct
+from time import sleep
 
 def capture_and_send_recv(soc, USE_FAKE_CAPTURE=False, cmd='r'):
     if USE_FAKE_CAPTURE == False:
@@ -22,6 +23,7 @@ def capture_and_send_recv(soc, USE_FAKE_CAPTURE=False, cmd='r'):
 
     if ret is True:
         print('Client: image captured')
+        len_send = 0
 
         '''
         Send
@@ -39,69 +41,42 @@ def capture_and_send_recv(soc, USE_FAKE_CAPTURE=False, cmd='r'):
             msg = msg + struct.pack('f', 1096.002)  # px
             msg = msg + struct.pack('f', 815.355)   # py
 
-        # RMat, tVec
+        # PadInfo
         for j in range(0, 12):
-            msg = msg + struct.pack('f', float(j))  # 36 bytes
+            msg = msg + struct.pack('f', float(j))  # 48 bytes
+
+        if cmd == 'd':
+            # DestInfo
+            for j in range(0, 12):
+                msg = msg + struct.pack('f', 100+float(j))  # 48 bytes
 
         if cmd == 'c' or cmd == 'r':
-            # # Image
-            # for i in range(IMG_HEIGHT):
-            #     for j in range(IMG_WIDTH):
-            #         for c in range(3):
-            #             str_c = '%c'%frame[i, j, c]
-            #             # msg = msg + struct.pack('c', str_c.encode('ascii'))
-            #             msg = msg + struct.pack('c', str_c)
-
             # Image
-            for i in range(IMG_HEIGHT/4):
+            for i in range(IMG_HEIGHT):
                 for j in range(IMG_WIDTH):
                     for c in range(3):
-                        str_c = '%c' % frame[i, j, c]
-                        # msg = msg + struct.pack('c', str_c.encode('ascii'))
-                        msg = msg + struct.pack('c', str_c)
-
-            print('Client: try to send.')
-            soc.send(msg)
-            print('Client: msg sent: len %d' % len(msg))
-
-            msg = ''
-            for i in range(IMG_HEIGHT/4, IMG_HEIGHT/2):
-                for j in range(IMG_WIDTH):
-                    for c in range(3):
-                        str_c = '%c' % frame[i, j, c]
-                        # msg = msg + struct.pack('c', str_c.encode('ascii'))
-                        msg = msg + struct.pack('c', str_c)
-
-            print('Client: try to send.')
-            soc.send(msg)
-            print('Client: msg sent: len %d' % len(msg))
-
-            msg = ''
-            for i in range(IMG_HEIGHT / 2, 3*IMG_HEIGHT / 4):
-                for j in range(IMG_WIDTH):
-                    for c in range(3):
-                        str_c = '%c' % frame[i, j, c]
-                        # msg = msg + struct.pack('c', str_c.encode('ascii'))
-                        msg = msg + struct.pack('c', str_c)
-
-            print('Client: try to send.')
-            soc.send(msg)
-            print('Client: msg sent: len %d' % len(msg))
-
-            msg = ''
-            for i in range(3*IMG_HEIGHT / 4, IMG_HEIGHT):
-                for j in range(IMG_WIDTH):
-                    for c in range(3):
-                        str_c = '%c' % frame[i, j, c]
-                        # msg = msg + struct.pack('c', str_c.encode('ascii'))
+                        str_c = '%c'%frame[i, j, c]
                         msg = msg + struct.pack('c', str_c)
 
         msg = msg + 'MME'
 
         try:
+            # print('Client: try to send.')
+            # len_send = len_send + soc.send(msg)
+            # print('Client: msg sent: len %d'%len(msg))
+
             print('Client: try to send.')
-            soc.send(msg)
-            print('Client: msg sent: len %d'%len(msg))
+            LEN_CHUNK = 10240
+
+            len_send = 0
+            for ipack in xrange(0, len(msg), LEN_CHUNK):
+                len_send = len_send + soc.send(msg[ipack: ipack+LEN_CHUNK])
+                print('Client: msg sent: len %d, %d' % (len(msg), len_send))
+                sleep(0.004)
+
+            print('Client: msg sent: len %d, %d' % (len(msg), len_send))
+
+
         except socket.error, e:
             if isinstance(e.args, tuple):
                 print "errno is %d" % e[0]
@@ -184,7 +159,8 @@ if __name__ == '__main__':
     '''
     network info
     '''
-    IP = '129.254.87.77' #'127.0.0.1', '192.168.137.50'
+    IP = '129.254.87.77'
+    # IP = '192.168.137.50'
     PORT= 8020
     ADDR = (IP, PORT)
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -1,5 +1,9 @@
 PATH_BASE = '/home/yochin/Faster-RCNN_TF'
+# PATH_BASE = '/home/etrimodman/smallcorgi_Faster-RCNN_TF_yochin'
 
+'''
+Objecct detection
+'''
 # db for real & synth data - 22+1 OBJECTS exclude 'sponge', 'orange'
 CLASSES = ('__background__', # always index 0
            'strawberry', 'papermate', 'highland', 'genuine', 'mark',
@@ -14,6 +18,31 @@ Candidate_CLASSES = ('ace', 'apple', 'cheezit', 'chococo', 'crayola',
 
 NUM_CLASSES = len(CLASSES) # +1 for background
 
+DETECTION_TH = 0.7
+
+'''
+network
+'''
+# if you do not assign the address ip, then the server will guess using command.
+# # KIST
+# KIST_STATIC_IP = '192.168.137.4'
+# ETRI_STATIC_IP = '192.168.137.3'
+# SERVER_IP = '192.168.137.50'        # '129.254.87.77'
+
+# ETRI
+KIST_STATIC_IP = '129.254.87.77'
+ETRI_STATIC_IP = '129.254.87.77'
+SERVER_IP = '129.254.87.77'
+SERVER_PORT = 8020
+
+
+LEN_CHUNK = 10240                       # if the server cannot receive all data, then reduce the # of LEN_CHUNK.
+
+'''
+Pose estimation
+'''
+POSE_EST_TH_CORRESPONDENCES = 100        # default 20
+POSE_EST_TH_INLIERS = 10                 # default 10
 
 
 # # db for real & synth data - 3+1 OBJECTS for material property

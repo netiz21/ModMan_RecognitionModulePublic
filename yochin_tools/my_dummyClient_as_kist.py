@@ -217,7 +217,8 @@ if __name__ == '__main__':
     '''
     network info
     '''
-    IP =  '129.254.87.77' #'127.0.0.1', '192.168.137.50'
+    IP = '129.254.87.77'
+    # IP = '192.168.137.50'
     PORT= 8020
     ADDR = (IP, PORT)
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -245,5 +246,4 @@ if __name__ == '__main__':
 
             while True:
                 data = soc.recv(1024)
-
                 print(data)
