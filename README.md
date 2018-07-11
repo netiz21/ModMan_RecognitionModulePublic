@@ -122,6 +122,10 @@ For running the recognition module, GPU memory is needed.
     Download [DBv1](https://drive.google.com/open?id=1CS-qci1p3CEP8x1H9CoK8kVmZtYQpl-j).
 
     Move DBv1 folder to $FRCN/yochin_tools/PoseEst
+    
+    Download [Models](https://drive.google.com/open?id=1tVcE0uufb4D5XnUO34HWoqJr2pBainy9).
+    
+    Move Models folder to $FRCN
 
 6. Set paths and run the program (for a camera, image, and video input)
 
