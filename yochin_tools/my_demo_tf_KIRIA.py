@@ -3,8 +3,8 @@
 
 import os
 import sys
-sys.path.append('/home/yochin/Faster-RCNN_TF/lib')
-# sys.path.append('/usr/lib/python2.7/dist-packages')
+import yo_network_info
+sys.path.append(os.path.join(yo_network_info.PATH_BASE, 'lib'))
 
 from networks.factory import get_network
 from fast_rcnn.config import cfg
@@ -29,16 +29,15 @@ CONF_THRESH = 0.6
 NMS_THRESH = 0.3
 
 # for DBv7
-CLASSES = ( '__background__',
-            'Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
-                    'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
-                    'Genuine', 'Hammer', 'Highland', 'Mark', 'MasterChef',
-                    'Moncher', 'Mustard', 'Papermate', 'Peg', 'Scissors',
-                    'Sponge', 'TomatoSoup', 'Waffle', 'airplane', 'banana',
-                    'strawberry')
+CLASSES = yo_network_info.CLASSES
+Candidate_CLASSES = yo_network_info.Candidate_CLASSES
 
-Candidate_CLASSES = ('Ace', 'Apple', 'Cheezit', 'Chiffon', 'Crayola',
-                     'Drill', 'Genuine', 'Mustard', 'TomatoSoup', 'airplane')
+# Candidate_CLASSES = ('Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
+#                     'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
+#                     'Genuine', 'Hammer', 'Highland', 'Mark', 'MasterChef',
+#                     'Moncher', 'Mustard', 'Papermate', 'Peg', 'Scissors',
+#                     'Sponge', 'TomatoSoup', 'Waffle', 'airplane', 'banana',
+#                     'strawberry')
 
 def list_files(path, ext):
     filelist = []
@@ -199,7 +198,7 @@ if __name__ == '__main__':
     # cfg.TRAIN.IMS_PER_BATCH: 2
 
     # for test
-    cfg.NCLASSES = 27 # +1 for background
+    cfg.NCLASSES = yo_network_info.NUM_CLASSES
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
     cfg.TEST.BBOX_REG = True   # Use BBox regressor
     cfg.TEST.SCALES = (600, )     # only one for test
@@ -211,7 +210,7 @@ if __name__ == '__main__':
     # tfArch = 'Resnet50_test'  # prototxt
     # tfmodel = './output/Resnet50/train/VGGnet_fast_rcnn_iter_140000.ckpt'
     # tfmodel = './output/Resnet_scriptItself/voc_2007_trainval/Resnet50_iter_140000.ckpt'
-    tfmodel = '../output/VGGnet_140000_noFlipped_DBV10_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
+    tfmodel = '../output/VGGnet_fast_rcnn_iter_70000.ckpt'
 
 
     # init session
@@ -251,8 +250,8 @@ if __name__ == '__main__':
             if input_key == ord('c'):
                 print('capture')
                 do_write_result = True
-                copyfile('./temp.xml', '/home/yochin/Desktop/ModMan_KIRIA/ObjectRecDet/est/%04d_est.xml' % (cnt))
-                copyfile('./temp.xml_est.jpg', '/home/yochin/Desktop/ModMan_KIRIA/ObjectRecDet/est/%04d_est.xml_est.jpg' % (cnt))
+                copyfile('./temp.xml', '../ModMan_KIRIA/%04d_est.xml' % (cnt))
+                copyfile('./temp.xml_est.jpg', '../ModMan_KIRIA/%04d_est.xml_est.jpg' % (cnt))
                 cnt = cnt + 1
             elif input_key == ord('w'):
                 CONF_THRESH = CONF_THRESH + 0.1

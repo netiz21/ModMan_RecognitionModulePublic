@@ -22,7 +22,7 @@ if __name__ == '__main__':
     '''
     This is the main function
     '''
-    saveBaseFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
+    saveBaseFolder = '../ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
     savedFolder_Infos = saveBaseFolder + 'Annotations'
     savedFolder_Images = saveBaseFolder + 'Images'
     savedFolder_ImageSets = saveBaseFolder + 'ImageSets'
@@ -101,4 +101,4 @@ if __name__ == '__main__':
 
                 if do_show_image == True:
                     cv2.imshow('img_anno', im)
-                    cv2.waitKey(0)
+                    cv2.waitKey(500)

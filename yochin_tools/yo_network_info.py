@@ -1,3 +1,4 @@
+# PATH_BASE = '/home/jang/smallcorgi_Faster-RCNN_TF_yochin'
 PATH_BASE = '/home/yochin/Faster-RCNN_TF'
 # PATH_BASE = '/home/etrimodman/smallcorgi_Faster-RCNN_TF_yochin'
 
@@ -12,9 +13,13 @@ CLASSES = ('__background__', # always index 0
            'drill', 'mustard', 'waffle', 'ace', 'airplane',
            'moncher', 'cheezit', 'chococo') # 'sponge'
 
-Candidate_CLASSES = ('ace', 'apple', 'cheezit', 'chococo', 'crayola',
-                     'drill', 'genuine', 'moncher', 'mustard', 'papermate',
-                     'scissors', 'tomatosoup', 'waffle', 'expo')
+Candidate_CLASSES = (
+    'ace', 'airplane', 'drill', 'mustard', 'waffle',
+    'chiffon', 'crayola', 'genuine', 'tomatosoup', 'cheezit')
+    #'strawberry', 'papermate', 'highland', 'mark',
+           # 'expo', 'champion', 'apple', 'cup',
+           # 'banana', 'scissors',
+           # 'moncher', 'chococo')
 
 # gripping points are stored.
 # [y, x, z] is a mm centered at the center of the object

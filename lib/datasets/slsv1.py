@@ -24,6 +24,7 @@ import subprocess
 from .imdb import imdb
 
 sys.path.append('/home/yochin/Faster-RCNN_TF/yochin_tools')
+sys.path.append('/home/jang/smallcorgi_Faster-RCNN_TF_yochin/yochin_tools')
 import yochin_tools.yo_network_info as yo_network_info
 
 DB_LIST = yo_network_info.CLASSES
