@@ -343,11 +343,13 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                             xyz = rotationMatrixToEulerAngles(rmat)
                             SubElement(tag_object, 'EulerAngles').text = str(xyz)
 
-
-
-
-    cv2.imshow('display', im)
-    cv2.waitKey(10)
+    if img.shape[0] > 600:
+        img_resized = cv2.resize(img, None, fx=0.5, fy=0.5)
+        cv2.imshow('display', img_resized)
+        cv2.waitKey(10)
+    else:
+        cv2.imshow('display', im)
+        cv2.waitKey(10)
 
     if len(strEstPathname) > 0:
         cv2.imwrite(strEstPathname + '_est.jpg', im)
@@ -469,7 +471,7 @@ if __name__ == '__main__':
     '''
     Settings
     '''
-    INPUT_TYPE = 0      # 0: WebCamera,
+    INPUT_TYPE = 7      # 0: WebCamera,
                         # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
@@ -479,7 +481,7 @@ if __name__ == '__main__':
                         # 7: working as server for SR300
     USE_POSEESTIMATE = True
 
-    AR_IP = '129.254.87.77'
+    AR_IP = '192.168.137.50'
     AR_PORT = 8020
 
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
@@ -555,7 +557,7 @@ if __name__ == '__main__':
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
 
     if INPUT_TYPE == 0:
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
         # cap.set(3, 640*2)
         # cap.set(4, 480*2)
     elif INPUT_TYPE == 6:
@@ -592,10 +594,8 @@ if __name__ == '__main__':
 
 
     # init session
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7)
-    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True))
-    # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
-    # , device_count = {'GPU': 0}
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True, device_count = {'GPU': 1}))
     tf.device('')
     # load network
     net = get_network(tfArch)
@@ -1521,7 +1521,6 @@ if __name__ == '__main__':
                         # img = np.array(np.rot90(img))
                         # img = img.copy()
 
-
                         cv2.imshow('display', img)
                         cv2.waitKey(10)
 
@@ -1577,7 +1576,7 @@ if __name__ == '__main__':
                 # 4 byte: num of object (int)
                 # 1 byte: obj ID (char)
                 # 4 * (9 + 3) = 48 bytes = rot + trans mat
-                # 4 * 2 = 8 bytes = x, y
+                # 4 * 4 = 16 bytes = left, top, right, bottom
 
                 if CONNECTED == True:
                     msg = 'MMS'
@@ -1590,13 +1589,15 @@ if __name__ == '__main__':
 
                         for j_RMat in range(0, 3):
                             for i_RMat in range(0, 3):
-                                msg = msg + struct.pack('f', obj_AR['RMat'][i_RMat][j_RMat])
-                        print('RMat:')
+                                msg = msg + struct.pack('d', obj_AR['RMat'][i_RMat][j_RMat])
+                                # print('Rmat: %f'%float(obj_AR['RMat'][i_RMat][j_RMat]))
+                        print('RMat: (col first)')
                         print(obj_AR['RMat'])
 
                         for j_TVec in range(0, 3):
-                            msg = msg + struct.pack('f', obj_AR['TVec'][j_TVec][0])
-                        print('TVec:')
+                            msg = msg + struct.pack('d', obj_AR['TVec'][j_TVec][0])
+                            # print('TVec: %f'%float(obj_AR['TVec'][j_TVec][0]))
+                        print('TVec: (col first)')
                         print(obj_AR['TVec'])
 
                         msg = msg + struct.pack('i', int(obj_AR['left'])) \

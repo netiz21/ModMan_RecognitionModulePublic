@@ -252,17 +252,9 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                         if rmat.sum() == 0 or np.isnan(rmat).any() or np.isnan(tvec).any() == True:
                             print('cannot find the pose information and fill with dummy values with all zeros')
                             # return for KIST
-                            obj_info = {'object': class_name,
-                                        'score': score,
-                                        'RMat': rmat,
-                                        'TVec': tvec * 0.0,
-                                        'x_center': (bbox[0] + bbox[2]) / 2,
-                                        'y_center': (bbox[1] + bbox[3]) / 2,
-                                        'left': bbox[0],
-                                        'top': bbox[1],
-                                        'right': bbox[2],
-                                        'bottom': bbox[3]
-                                        }
+                            obj_info = {'object': class_name, 'score': score, 'RMat': rmat,
+                                        'TVec': tvec * 0.0, 'x_center': (bbox[0] + bbox[2]) / 2,
+                                        'y_center': (bbox[1] + bbox[3]) / 2}
                             ret_list_forKIST.append(obj_info)
 
                         else:
@@ -299,8 +291,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                                         'left': bbox[0],
                                         'top': bbox[1],
                                         'right': bbox[2],
-                                        'bottom': bbox[3]
-                                        }
+                                        'bottom': bbox[3]}
                             ret_list_forKIST.append(obj_info)
 
                             print('\tRot info: ')
@@ -469,7 +460,7 @@ if __name__ == '__main__':
     '''
     Settings
     '''
-    INPUT_TYPE = 0      # 0: WebCamera,
+    INPUT_TYPE = 7      # 0: WebCamera,
                         # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
@@ -479,8 +470,8 @@ if __name__ == '__main__':
                         # 7: working as server for SR300
     USE_POSEESTIMATE = True
 
-    AR_IP = '129.254.87.77'
-    AR_PORT = 8020
+    AR_IP = '192.168.137.50'
+    AR_PORT = 8030
 
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
         extMat = getCamIntParams('client')
@@ -555,7 +546,7 @@ if __name__ == '__main__':
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
 
     if INPUT_TYPE == 0:
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
         # cap.set(3, 640*2)
         # cap.set(4, 480*2)
     elif INPUT_TYPE == 6:
@@ -592,10 +583,7 @@ if __name__ == '__main__':
 
 
     # init session
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7)
-    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True))
-    # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
-    # , device_count = {'GPU': 0}
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
     tf.device('')
     # load network
     net = get_network(tfArch)

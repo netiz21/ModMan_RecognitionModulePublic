@@ -2,8 +2,9 @@ import tensorflow as tf
 from networks.network import Network
 
 import os, sys
-sys.path.append('/home/yochin/Faster-RCNN_TF/yochin_tools')
-import yochin_tools.yo_network_info as yo_network_info
+
+sys.path.append(os.getcwd())
+import yo_network_info
 
 #define
 n_classes = yo_network_info.NUM_CLASSES

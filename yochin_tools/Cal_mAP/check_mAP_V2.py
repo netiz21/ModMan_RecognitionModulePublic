@@ -51,7 +51,7 @@ def bb_intersection_over_union(rectA, rectB):
 # Recall = TP/(TP+FN)
 
 # check name and IoU is accepted.
-def checkDetection(infoGnd, infoQuery):
+def checkDetection(infoGnd, infoQuery, check_only_recog = False):
     infoGndA = infoGnd.split()
     infoQueryA = infoQuery.split()
 
@@ -60,8 +60,12 @@ def checkDetection(infoGnd, infoQuery):
 
     ret = False
 
-    if infoGndA[0].lower() == infoQueryA[0].lower() and bb_intersection_over_union(boxA, boxB) > 0.5:
-        ret = True
+    if check_only_recog == True:
+        if infoGndA[0].lower() == infoQueryA[0].lower():
+            ret = True
+    else:
+        if infoGndA[0].lower() == infoQueryA[0].lower() and bb_intersection_over_union(boxA, boxB) > 0.5:
+            ret = True
 
     return ret
 
@@ -132,8 +136,8 @@ def read_list_linebyline(fname):
     return content
 
 
-# read all files in Images and check both estDir and gndDir and calculate mAP
-def check_mAP(listObject, strListfilePath, strGndFolder, strEstFolder, strResultFolder, IS_SCORE_RANGE_0_TO_100):
+# read all xml files in Images and check both estDir and gndDir and calculate mAP
+def check_mAP(listObject, strListfilePath, strGndFolder, strEstFolder, strResultFolder, IS_SCORE_RANGE_0_TO_100, check_only_recog = False):
     TH_range = np.arange(0., 1.025, 0.025)      # the result is same where 0.~1.025 or 0.~1.
     confMat = np.zeros((len(TH_range), len(listObject), 3), dtype = np.int)
 
@@ -175,7 +179,7 @@ def check_mAP(listObject, strListfilePath, strGndFolder, strEstFolder, strResult
             for iGnd, infoGnd in enumerate(contentGnd):
                 for iQuery, infoQuery in enumerate(filteredQuery):
                     if len(infoGnd) > 0 and len(infoQuery) > 0:
-                        if checkDetection(infoGnd, infoQuery) is True:
+                        if checkDetection(infoGnd, infoQuery, check_only_recog = check_only_recog) is True:
                             # increase tp
                             tarname = infoGnd.split()[0].lower()
                             idx = listObject.index(tarname)
@@ -205,9 +209,10 @@ def check_mAP(listObject, strListfilePath, strGndFolder, strEstFolder, strResult
                     # 0: tp, 1:fp, 2:fn
                     confMat[iTH, idx, 1] = confMat[iTH, idx, 1] + 1
 
-
-
-    fid = open(os.path.join(strResultFolder, 'result.txt'), 'w')
+    if check_only_recog == True:
+        fid = open(os.path.join(strResultFolder, 'result_recog.txt'), 'w')
+    else:
+        fid = open(os.path.join(strResultFolder, 'result_loc.txt'), 'w')
     for Obj in listObject:
         fid.write('%s\t'%Obj)
     fid.write('\n')

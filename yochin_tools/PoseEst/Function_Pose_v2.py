@@ -7,8 +7,8 @@ import h5py
 import yo_network_info
 
 basePath = os.path.join(yo_network_info.PATH_BASE, 'yochin_tools/PoseEst/DBv1')
-TH_CORRESPONDENCES = 20
-TH_INLIERS = 10
+TH_CORRESPONDENCES = yo_network_info.POSE_EST_TH_CORRESPONDENCES
+TH_INLIERS = yo_network_info.POSE_EST_TH_INLIERS
 
 def ReadDB(classname) :
     ftr = io.loadmat(os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1.mat'))
@@ -263,7 +263,7 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord, MaxIterRansac=1000):  
 #     return rmat, tvec
 
 
-
+    
 def computeTransfrom(point,rmat,tvec,ret,init_coord):
     A = point
     rs = np.dot(ret,np.dot(rmat,np.transpose(A,[1,0]))+tvec)
@@ -341,9 +341,9 @@ def cornerpointsTransform2(img,rmat,tvec,ret,init_coord):
         Result[ii,1] = rs[1,:]
         Result[ii,2] = rs[2,:]
     return Result
-
-
-
+    
+    
+    
 
 
 ##################################
