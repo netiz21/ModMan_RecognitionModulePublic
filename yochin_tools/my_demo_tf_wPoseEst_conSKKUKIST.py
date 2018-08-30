@@ -1,133 +1,51 @@
 # coding=utf-8
 # #!/usr/bin/env python
 
+# default library
 import os
 import sys
 import struct
 import copy
-sys.path.append('/home/yochin/Faster-RCNN_TF/lib')
+
+import yo_network_info
+sys.path.append(os.path.join(yo_network_info.PATH_BASE, 'lib'))
 # sys.path.append('/usr/lib/python2.7/dist-packages')
 
+# Faster-RCNN_TF
 from networks.factory import get_network
 from fast_rcnn.config import cfg
 from fast_rcnn.test import im_detect
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
+
+# ModMan module & Pose estimation
 from PoseEst.Function_Pose_v1 import *
 import math
 
-#import caffe
 import tensorflow as tf
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
-import argparse
-import random
 from xml.etree.ElementTree import Element, dump, SubElement, ElementTree
 from datetime import datetime
 
 # socket
 from socket import *
-from select import select
 import errno
 
+# debugging
 import logging
 logging.basicConfig(level = logging.INFO)
 
-import pyrealsense as pyrs
+# realsense
+# import pyrealsense as pyrs
 
+CLASSES = yo_network_info.CLASSES
+Candidate_CLASSES = yo_network_info.Candidate_CLASSES
+NUM_CLASSES = yo_network_info.NUM_CLASSES
 
 CONF_THRESH = 0.6
 NMS_THRESH = 0.3
-
-# for DBv6
-# CLASSES = ( '__background__',
-#             'ace', #1
-#             'champion',
-#             'cheezit',
-#             'chiffon',
-#             'chococo', #5
-#             'crayola',
-#             'expo',
-#             'genuine',
-#             'highland',
-#             'mark', #10
-#             'moncher',
-#             'papermate',
-#             'waffle',
-#             'cup',
-#             'drill',
-#             'mustard',
-#             'scissors',
-#             'tomatosoup') # 18
-
-# # for DBv7
-# CLASSES = ( '__background__',
-#                     'Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
-#                     'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
-#                     'Genuine', 'Hammer', 'Highland', 'Mark', 'MasterChef',
-#                     'Moncher', 'Mustard', 'Papermate', 'Peg', 'Scissors',
-#                     'Sponge', 'TomatoSoup', 'Waffle', 'airplane', 'banana',
-#                     'strawberry')
-#
-# Candidate_CLASSES = ('Ace', 'Cheezit', 'Chiffon',
-#                     'Chococo', 'Crayola',
-#                     'Genuine', 'Waffle')#'Drill',, 'airplane''Moncher','Mustard','TomatoSoup',
-#
-# # for DBV11_10obj
-# CLASSES_10obj = ['__background__',
-#                  'Ace', 'Apple', 'Cheezit', 'Chiffon', 'Crayola',
-#                  'Drill', 'Genuine', 'Mustard', 'TomatoSoup', 'airplane']
-# CLASSES = CLASSES_10obj
-
-# for realV1
-# CLASSES = ('__background__',
-#            'strawberry', 'Papermate', 'Highland', 'Genuine', 'Mark',
-#            'Expo', 'Champion', 'Orange', 'Apple', 'Cup',
-#            'banana', 'Chiffon', 'Crayola', 'Scissors', 'TomatoSoup',
-#            'Drill', 'Mustard', 'Waffle', 'Ace', 'airplane',
-#            'Moncher', 'Cheezit', 'Chococo'
-# )
-#
-# Candidate_CLASSES = (
-# 'Ace','Apple', 'Champion', 'Cheezit', 'Chiffon',
-# 'Chococo', 'Crayola','Cup', 'Drill', 'Expo', 'Genuine',
-# 'Highland', 'Mark','Waffle', 'Moncher', 'Mustard', 'Papermate', 'Scissors', 'TomatoSoup'
-# )
-# # 'strawberry', 'airplane','Papermate', 'Orange', 'Apple', 'Cup','banana',  'Scissors', 'TomatoSoup','Drill', 'Mustard','Moncher',
-
-# for real_sole + synthetic_duet
-# # db for real data - 25 OBJECTS (+ sponge)
-# CLASSES = ('__background__', # always index 0
-#            'strawberry', 'papermate', 'highland', 'genuine', 'mark',
-#            'expo', 'champion', 'orange', 'apple', 'cup',
-#            'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup',
-#            'drill', 'mustard', 'waffle', 'ace', 'airplane',
-#            'moncher', 'cheezit', 'chococo', 'sponge') # change n_classes in networks/VGGnetslsv1_train/test.py
-
-# db for real data - 22 OBJECTS
-CLASSES = ('__background__', # always index 0
-           'strawberry', 'papermate', 'highland', 'genuine', 'mark',
-           'expo', 'champion', 'apple', 'cup',
-           'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup',
-           'drill', 'mustard', 'waffle', 'ace', 'airplane',
-           'moncher', 'cheezit', 'chococo') # change n_classes in networks/VGGnetslsv1_train/test.py
-
-Candidate_CLASSES = ('ace', 'apple', 'cheezit', 'chococo', 'crayola',
-                     'drill', 'genuine', 'moncher', 'mustard', 'papermate',
-                     'scissors', 'tomatosoup', 'waffle')
-
-
-# CLASSES = ('__background__',
-#            'aeroplane', 'bicycle', 'bird', 'boat',
-#            'bottle', 'bus', 'car', 'cat', 'chair',
-#            'cow', 'diningtable', 'dog', 'horse',
-#            'motorbike', 'person', 'pottedplant',
-#            'sheep', 'sofa', 'train', 'tvmonitor')
-
-NUM_CLASSES = len(CLASSES) # +1 for background
-
 
 # Checks if a matrix is a valid rotation matrix.
 def isRotationMatrix(R):
@@ -264,6 +182,12 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
         dets = dets[keep, :]
 
         inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+
+        # # make the result,
+        # dets[0, :4] = [0, 0, im.shape[1], im.shape[0]]
+        # dets[0, -1] = .99
+        # class_name = 'ace'
+        # inds = [0]
 
         if len(inds) > 0:
             for i in inds:
@@ -522,14 +446,18 @@ if __name__ == '__main__':
     '''
     Settings
     '''
-    INPUT_TYPE = 5      # 0: WebCamera,
+    INPUT_TYPE = 0      # 0: WebCamera,
                         # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
                         # 4: Network input from ETRI(as client),
                         # 5: working as server,
                         # 6: Realsense Camera
-    USE_POSEESTIMATE = True
+    USE_POSEESTIMATE = False
+
+    # AR_IP = '129.254.87.45'
+    AR_IP = '192.168.0.8'
+    AR_PORT = 8020
 
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
         extMat = getCamIntParams('client')
@@ -604,7 +532,7 @@ if __name__ == '__main__':
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
 
     if INPUT_TYPE == 0:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
         # cap.set(3, 640*2)
         # cap.set(4, 480*2)
     elif INPUT_TYPE == 6:
@@ -636,11 +564,13 @@ if __name__ == '__main__':
     # tfmodel = '../output/VGGnet_140000_Prj-RealSingle10375/train/VGGnet_fast_rcnn_iter_70000.ckpt'    # real db
     # tfmodel = '../output/VGGnet_140000_noFlipped_DBV11_10obj_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
     # tfmodel = '../output/2. VGGnet_140000_Prj-RealSingle8883_SynthTwo9150_ExcSponageOrange/train/VGGnet_fast_rcnn_iter_70000.ckpt'  # real db
-    tfmodel = '../output/VGGnet-RealSingle_SynthMultiObj234/train/VGGnet_fast_rcnn_iter_70000.ckpt'
+    tfmodel = '../output/VGGnet_fast_rcnn_iter_70000.ckpt'
 
 
     # init session
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7)
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True))
+    # , device_count = {'GPU': 0}
     tf.device('')
     # load network
     net = get_network(tfArch)
@@ -706,6 +636,8 @@ if __name__ == '__main__':
             # cv2.namedWindow('Input')
             # cv2.imshow('Input', frame)
             # cv2.waitKey
+
+            # frame = cv2.flip(frame, 1)
 
             cv2.imwrite('./debug_img.png', frame)
 
@@ -918,7 +850,8 @@ if __name__ == '__main__':
                 print('send _%s_ to KIST'%(msg))
     elif INPUT_TYPE == 2:
         # strImageFolder = '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB/Images'  # Single Object image files
-        strImageFolder = '../debug_dropbox_upload/test'
+        # strImageFolder = '../debug_dropbox_upload/test'
+        strImageFolder = '../realDB'
         strPathResult = './dummy'
 
         if not os.path.exists(strPathResult):
@@ -938,7 +871,7 @@ if __name__ == '__main__':
             listTestFiles.extend(listTestFiles2)
             listTestFiles.extend(listTestFiles3)
 
-        for filenameExt in listTestFiles:
+        for filenameExt in listTestFiles[3:]:
             filename = os.path.splitext(filenameExt)[0]
             # filenameExt = filename + '.jpg'
 
@@ -952,6 +885,7 @@ if __name__ == '__main__':
                     demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'), extMat, FeatureDB, CoorDB, GeoDB)
                 else:
                     demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'))
+
                 # cv2.waitKey(0)
     elif INPUT_TYPE == 4:
         # # as a client, connect to a KIST server
@@ -1119,8 +1053,6 @@ if __name__ == '__main__':
         '''
         Server Info
         '''
-        AR_IP = '129.254.87.77'
-        AR_PORT = 8020
         AR_ADDR = (AR_IP, AR_PORT)
         AR_serverSocket = socket(AF_INET, SOCK_STREAM)
         AR_serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)

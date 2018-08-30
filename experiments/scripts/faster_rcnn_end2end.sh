@@ -54,6 +54,11 @@ LOG="output/_logs/faster_rcnn_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%
 exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
+source activate ModMan
+
+
+#  --resume asdfds.ckpt
+
 #  --resume 1 \
 time python ./tools/train_net.py --device ${DEV} --device_id ${DEV_ID} \
   --weights data/pretrain_model/VGG_imagenet.npy \

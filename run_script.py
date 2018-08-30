@@ -2,7 +2,7 @@ import os
 import datetime
 
 # delete t.he previous data caches
-os.system('rm ./data/cache/*.pkl')
+# os.system('rm ./data/cache/*.pkl')
 
 '''
 This script is for Synthetic Learning dataset
@@ -16,8 +16,10 @@ This script is for Synthetic Learning dataset
 # os.system('python ./yochin_tools/nu_ApplyBackground_VarEnv.py')
 
 # os.system('python ./yochin_tools/nu_makeSuffleRowsText.py')
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet-RealSingle_SynthMultiObj234 RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
+os.system('CUDA_VISIBLE_DEVICES=0 ./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet-Test RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
+
 
 # os.system('./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet_KIRIA_noFlipped_DBV10_train RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
 #  2>&1 | tee ./log_VarEnv_withTwoObjs.log

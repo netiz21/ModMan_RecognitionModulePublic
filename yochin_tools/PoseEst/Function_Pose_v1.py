@@ -2,15 +2,22 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 import os
-import scipy.io as io    
+import scipy.io as io
 import h5py
+import yo_network_info
 
-basePath = '/home/yochin/Faster-RCNN_TF/yochin_tools/PoseEst/DBv1'
+basePath = os.path.join(yo_network_info.PATH_BASE, 'yochin_tools/PoseEst/DBv1')
 TH_CORRESPONDENCES = 20
 TH_INLIERS = 10
 
-def ReadDB(classname) : 
-    ftr = io.loadmat(os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1.mat'))
+def ReadDB(classname) :
+    strPath = os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1_SURF.mat')
+    if os.path.exists(strPath):
+        ftr = io.loadmat(strPath)
+    else:
+        ftr = io.loadmat(os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1.mat'))
+
+
     FeatureDB=np.array(ftr['FeatureDB'])
     FeatureDB = FeatureDB.astype("float32")
     keypointDB=np.array(ftr['keypointDB'])
@@ -20,13 +27,14 @@ def ReadDB(classname) :
     return FeatureDB,CoorDB, keypointDB
 
 
+
 def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upper point of boundingBox, ReadDB-FeatureDB, ReadDB-CoorDB, CameraMatrix, CameraDistortion
     # init_coord [x, y, -]
     try:
         imgg =cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
         # imgg = cv2.medianBlur(imgg, 3)
         # opencv3.~
-        surf = cv2.xfeatures2d.SURF_create(hessianThreshold=1000, nOctaves=4, nOctaveLayers=3, extended=False, upright=False)
+        surf = cv2.xfeatures2d.SURF_create()
         kp, descritors = surf.detectAndCompute(imgg,None)
 
         #for ptDisp in kp:
@@ -59,9 +67,9 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
             tempCoord = np.zeros((1,3),np.float32)
             tempkey = np.zeros((1,2),np.float32)
             for m in xrange(len(matches)):
-                tempCoord[:,0] = CoorDB[matches[m].trainIdx,0]      # x
-                tempCoord[:,1] = CoorDB[matches[m].trainIdx,1]      # y
-                tempCoord[:,2] = CoorDB[matches[m].trainIdx,2]      # z
+                tempCoord[:,1] = CoorDB[matches[m].trainIdx,0]  *1000.    # x
+                tempCoord[:,2] = -CoorDB[matches[m].trainIdx,1]    *1000.  # y
+                tempCoord[:,0] = CoorDB[matches[m].trainIdx,2]   *1000.   # z
                 objpoints[m,:] = tempCoord
                 tempkey[:,0] = kp[matches[m].queryIdx].pt[1]        # x
                 tempkey[:,1] = kp[matches[m].queryIdx].pt[0]        # y
@@ -234,7 +242,7 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
 #     return rmat, tvec
 
 
-    
+
 def computeTransfrom(point,rmat,tvec,ret,init_coord):
     A = point
     rs = np.dot(ret,np.dot(rmat,np.transpose(A,[1,0]))+tvec)
@@ -312,9 +320,9 @@ def cornerpointsTransform2(img,rmat,tvec,ret,init_coord):
         Result[ii,1] = rs[1,:]
         Result[ii,2] = rs[2,:]
     return Result
-    
-    
-    
+
+
+
 
 
 ##################################

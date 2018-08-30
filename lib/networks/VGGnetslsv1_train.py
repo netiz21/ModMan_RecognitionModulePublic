@@ -21,6 +21,7 @@ class VGGnetslsv1_train(Network):
         self.trainable = trainable
         self.setup()
 
+
         # create ops and placeholders for bbox normalization process
         with tf.variable_scope('bbox_pred', reuse=True):
             weights = tf.get_variable("weights")

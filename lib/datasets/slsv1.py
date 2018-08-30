@@ -23,13 +23,13 @@ import subprocess
 
 from .imdb import imdb
 
-sys.path.append('/home/yochin/Faster-RCNN_TF/yochin_tools')
+sys.path.append('/home/jang/smallcorgi_Faster-RCNN_TF_yochin/yochin_tools')
 import yochin_tools.yo_network_info as yo_network_info
 
 DB_LIST = yo_network_info.CLASSES
 
 class slsv1(imdb):
-    def __init__(self, image_set, devkit_path='/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1'):
+    def __init__(self, image_set, devkit_path='/home/jang/smallcorgi_Faster-RCNN_TF_yochin/ModMan_DB/ETRI_HMI/ModMan_SLSv1'):
         imdb.__init__(self, image_set)
         self._image_set = image_set
         self._devkit_path = devkit_path
