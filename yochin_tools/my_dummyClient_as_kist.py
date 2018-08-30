@@ -11,6 +11,7 @@ import numpy as np
 import os, sys
 import socket, errno
 import struct
+from time import sleep
 
 def capture_and_send_recv_double(soc, USE_FAKE_CAPTURE=False):
     if USE_FAKE_CAPTURE == False:
@@ -43,8 +44,19 @@ def capture_and_send_recv_double(soc, USE_FAKE_CAPTURE=False):
         msg = msg + 'MME'
 
         try:
+            # print('Client: try to send.')
+            # soc.send(msg)
+
             print('Client: try to send.')
-            soc.send(msg)
+            LEN_CHUNK = 10240
+
+            len_send = 0
+            for ipack in xrange(0, len(msg), LEN_CHUNK):
+                len_send = len_send + soc.send(msg[ipack: ipack + LEN_CHUNK])
+                print('Client: msg sent: len %d, %d' % (len(msg), len_send))
+                sleep(0.004)
+
+            print('Client: msg sent: len %d, %d' % (len(msg), len_send))
         except socket.error, e:
             if isinstance(e.args, tuple):
                 print "errno is %d" % e[0]
@@ -199,7 +211,7 @@ def capture_and_send_recv_float(soc, USE_FAKE_CAPTURE=False):
     return True
 
 if __name__ == '__main__':
-    USE_FAKE_CAPTURE = True
+    USE_FAKE_CAPTURE = False
 
     '''
     data info
@@ -233,11 +245,15 @@ if __name__ == '__main__':
     print('Client: connected to the server')
 
     while True:
-        cmd = input('Choose command (ex: \'r\'eceive or \'s\'end).\n>>')
+        cmd = input('Choose command (ex: \'r\'eceive or \'s\'end or \'c\'ontinuously capture and send).\n>>')
 
         if cmd == 's':
             # capture_and_send_recv_float(soc, USE_FAKE_CAPTURE=USE_FAKE_CAPTURE)
             capture_and_send_recv_double(soc, USE_FAKE_CAPTURE=USE_FAKE_CAPTURE)
+        elif cmd == 'c':
+            while True:
+                capture_and_send_recv_double(soc, USE_FAKE_CAPTURE=USE_FAKE_CAPTURE)
+                sleep(0.05)
         else:   # 'r'
             '''
             Receive

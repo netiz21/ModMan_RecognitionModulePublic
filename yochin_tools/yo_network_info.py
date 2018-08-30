@@ -14,7 +14,25 @@ CLASSES = ('__background__', # always index 0
 
 Candidate_CLASSES = ('ace', 'apple', 'cheezit', 'chococo', 'crayola',
                      'drill', 'genuine', 'moncher', 'mustard', 'papermate',
-                     'scissors', 'tomatosoup', 'waffle')
+                     'scissors', 'tomatosoup', 'waffle', 'expo')
+
+# gripping points are stored.
+# [y, x, z] is a mm centered at the center of the object
+ListGrippingPoint = {'ace': [[70, 0, 40], [70, 0, -40], [-70, 0, 40], [-70, 0, -40]],
+                     'apple': [],
+                     'cheezit': [[0, 80, 30], [0, 80, -30], [0, -80, 30], [0, -80, -30]],
+                     'chococo': [],
+                     'crayola': [[0, 80, 30], [0, -80, 30], [0, 80, -30], [0, -80, -30]],
+                     'drill': [],
+                     'genuine': [[60, 0, 60], [60, 0, -60], [-60, 0, 60], [-60, 0, -60]],
+                     'moncher': [[70, 0, 40], [70, 0, -40], [-70, 0, 40], [-70, 0, -40]],
+                     'mustard': [[0, 50, 30], [0, -50, -30], [0, -50, 30], [0, 50, -30]],
+                     'papermate': [],
+                     'scissors': [],
+                     'tomatosoup': [],
+                     'waffle': [[0, 80, 30], [0, -80, 30], [0, 80, -30], [0, -80, -30]],
+                     'expo': []
+                     }
 
 NUM_CLASSES = len(CLASSES) # +1 for background
 
@@ -41,7 +59,7 @@ LEN_CHUNK = 10240                       # if the server cannot receive all data,
 '''
 Pose estimation
 '''
-POSE_EST_TH_CORRESPONDENCES = 100        # default 20
+POSE_EST_TH_CORRESPONDENCES = 20        # default 20
 POSE_EST_TH_INLIERS = 10                 # default 10
 
 

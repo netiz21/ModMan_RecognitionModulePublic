@@ -8,6 +8,7 @@ import struct
 import copy
 
 import yo_network_info
+import time
 sys.path.append(os.path.join(yo_network_info.PATH_BASE, 'lib'))
 # sys.path.append('/usr/lib/python2.7/dist-packages')
 
@@ -153,15 +154,16 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
     ret_list_BB = []
 
     # Detect all object classes and regress object bounds
-    timer = Timer()
-    timer.tic()
+    t = time.time()
     scores, boxes = im_detect(sess, net, im)
-    timer.toc()
+    elapsed = time.time() - t
+    print('Detect: %.3f\n' % elapsed)
     # print ('\t\t\t\tDetection took {:.3f}s for '
     #        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
     # im = im[:, :, (2, 1, 0)]  # for plt
 
+    t = time.time()
     fontFace = cv2.FONT_HERSHEY_PLAIN;
     fontScale = 2;
     fontThickness = 2;
@@ -324,6 +326,15 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                             # draw center position from a camera (mm -> cm by x 0.1)
                             cv2.putText(im, '(%d, %d, %d)'%(tvec[1] * 0.1, -tvec[0] * 0.1, tvec[2] * 0.1), (int(Result[0][0]), int(Result[0][1])), fontFace, fontScale, fontColor, thickness=fontThickness)
 
+
+                            # draw gripping point based the database
+                            ptGPs = np.array(yo_network_info.ListGrippingPoint[class_name.lower()])
+                            if len(ptGPs) > 0:
+                                pt2DGPs = computeTransfrom(ptGPs, rmat, tvec, extMat, init_coord)
+                                pt2DGPs = np.transpose(pt2DGPs)
+                                for ptDisp in pt2DGPs:
+                                    cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 7, (0,0,0,0), -1)
+
                     if len(strEstPathname) > 0:
                         tag_object = Element('object')
                         SubElement(tag_object, 'name').text = class_name
@@ -343,11 +354,11 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                             xyz = rotationMatrixToEulerAngles(rmat)
                             SubElement(tag_object, 'EulerAngles').text = str(xyz)
 
-
-
-
     cv2.imshow('display', im)
     cv2.waitKey(10)
+
+    elapsed = time.time() - t
+    print('Drawing: %.3f\n' % elapsed)
 
     if len(strEstPathname) > 0:
         cv2.imwrite(strEstPathname + '_est.jpg', im)
@@ -469,7 +480,7 @@ if __name__ == '__main__':
     '''
     Settings
     '''
-    INPUT_TYPE = 8      # 0: WebCamera,
+    INPUT_TYPE = 0      # 0: WebCamera,
                         # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
@@ -483,8 +494,9 @@ if __name__ == '__main__':
     AR_PORT = 8020
 
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
-        extMat = getCamIntParams('client')
-        # extMat = getCamIntParams('C920')#
+        extMat = getCamIntParams('C920')
+        # extMat = getCamIntParams('client')
+
 
     DO_WRITE_RESULT_AVI = False
     name_output_avi = 'output.avi'
@@ -555,7 +567,11 @@ if __name__ == '__main__':
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
 
     if INPUT_TYPE == 0:
-        cap = cv2.VideoCapture(0)
+        for i_temp in range(0, 10):
+            cap = cv2.VideoCapture(i_temp)
+            if cap.isOpened() == True:
+                print('camera %d is openned'%i_temp)
+                break
         # cap.set(3, 640*2)
         # cap.set(4, 480*2)
     elif INPUT_TYPE == 6:
@@ -579,7 +595,7 @@ if __name__ == '__main__':
     elif INPUT_TYPE == 3:
         cap = cv2.VideoCapture('/home/yochin/Desktop/demo_avi.mp4')
 
-    tfArch = 'VGGnetslsv1_test'  # prototxt
+
     # tfArch = 'Resnet50_test'  # prototxt
     # tfmodel = './output/Resnet50/train/VGGnet_fast_rcnn_iter_140000.ckpt'
     # tfmodel = './output/Resnet_scriptItself/voc_2007_trainval/Resnet50_iter_140000.ckpt'
@@ -588,6 +604,7 @@ if __name__ == '__main__':
     # tfmodel = '../output/VGGnet_140000_noFlipped_DBV11_10obj_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
     # tfmodel = '../output/2. VGGnet_140000_Prj-RealSingle8883_SynthTwo9150_ExcSponageOrange/train/VGGnet_fast_rcnn_iter_70000.ckpt'  # real db
     # tfmodel = '../output/VGGnet-RealSingle_SynthMultiObj234/train/VGGnet_fast_rcnn_iter_70000.ckpt'
+    tfArch = 'VGGnetslsv1_test'  # prototxt
     tfmodel = '../models/VGGnet_fast_rcnn_iter_70000.ckpt'
 
 
@@ -654,7 +671,10 @@ if __name__ == '__main__':
 
     if INPUT_TYPE == 0 or INPUT_TYPE == 3:
         while (True):
+            t = time.time()
             ret, frame = cap.read()
+            elapsed = time.time() - t
+            print('Capture: %.3f\n'%elapsed)
 
             # frame = np.rot90(frame, k=3)
             #
@@ -664,9 +684,9 @@ if __name__ == '__main__':
 
             # frame = cv2.flip(frame, 1)
 
-            cv2.imwrite('./debug_img.png', frame)
-
             if ret is True:
+                cv2.imwrite('./debug_img.png', frame)
+
                 if USE_POSEESTIMATE is True:
                     im, list_objs_forKIST, _ = demo_all(sess, net, frame, '', extMat, FeatureDB, CoorDB, GeoDB)
                 else:
@@ -675,27 +695,28 @@ if __name__ == '__main__':
                 if DO_WRITE_RESULT_AVI == True:
                     print(im.shape)
                     outavi.write(im)
+
+                # cv2.imshow('frame', frame)
+                input_key = cv2.waitKey(1)
+
+                if input_key == ord('q'):
+                    break
+                elif input_key == ord('w'):
+                    CONF_THRESH = CONF_THRESH + 0.1
+                    print(CONF_THRESH)
+                elif input_key == ord('s'):
+                    CONF_THRESH = CONF_THRESH - 0.1
+                    print(CONF_THRESH)
+                elif input_key == ord('c'):
+                    timestamp = '%d_%d_%d_%d_%d_%d_%d'%(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second, datetime.now().microsecond)
+                    cv2.imwrite('./%s.png'%timestamp, frame)
+                    print('captured %s image', timestamp)
+                elif input_key == ord('p'):
+                    USE_POSEESTIMATE = 1 - USE_POSEESTIMATE
+                    print('USE_POSEESTIMATE: %d'%(USE_POSEESTIMATE))
             else:
                 print('no frame\n')
 
-            # cv2.imshow('frame', frame)
-            input_key = cv2.waitKey(1)
-
-            if input_key == ord('q'):
-                break
-            elif input_key == ord('w'):
-                CONF_THRESH = CONF_THRESH + 0.1
-                print(CONF_THRESH)
-            elif input_key == ord('s'):
-                CONF_THRESH = CONF_THRESH - 0.1
-                print(CONF_THRESH)
-            elif input_key == ord('c'):
-                timestamp = '%d_%d_%d_%d_%d_%d_%d'%(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second, datetime.now().microsecond)
-                cv2.imwrite('./%s.png'%timestamp, frame)
-                print('captured %s image', timestamp)
-            elif input_key == ord('p'):
-                USE_POSEESTIMATE = 1 - USE_POSEESTIMATE
-                print('USE_POSEESTIMATE: %d'%(USE_POSEESTIMATE))
 
         if DO_WRITE_RESULT_AVI == True:
             outavi.release()

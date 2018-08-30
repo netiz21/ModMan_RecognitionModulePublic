@@ -7,17 +7,13 @@ os.system('rm ./data/cache/*.pkl')
 '''
 This script is for Synthetic Learning dataset
 '''
-# # print the start time on the file
-# fid = open('/home/yochin/Desktop/ModMan_KIRIA/log2.txt', 'w')
-# print >> fid, 'start time : ', datetime.datetime.now()
-#
-# os.system('python ./yochin_tools/nu_ApplyBackground_Depth.py')
+# # os.system('python ./yochin_tools/nu_ApplyBackground_Depth.py')
 # os.system('python ./yochin_tools/nu_ApplyBackground_Depth_KIRIA.py')
-# os.system('python ./yochin_tools/nu_ApplyBackground_VarEnv.py')
-
-# os.system('python ./yochin_tools/nu_makeSuffleRowsText.py')
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet-RealSingle_SynthMultiObj234 RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
+# # os.system('python ./yochin_tools/nu_ApplyBackground_VarEnv.py')
+#
+# # os.system('python ./yochin_tools/nu_makeSuffleRowsText.py')
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet-RealSingle_SynthMultiObj234 RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
 
 # os.system('./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet_KIRIA_noFlipped_DBV10_train RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
 #  2>&1 | tee ./log_VarEnv_withTwoObjs.log
@@ -43,3 +39,21 @@ os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh g
 # # os.system('python ./yochin_tools/nu_makeSuffleRowsText.py')
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh gpu 1 VGG16 slsv1 --set EXP_DIR VGGnet-RealSingle_SynthMultiObj23 RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
+
+'''
+Below is to gauge the training time.
+'''
+# print the start time on the file
+fid = open('/home/yochin/Desktop/ModMan_ETRI/log2.txt', 'w')
+print >> fid, 'start time : ', datetime.datetime.now()
+
+os.system('python ./yochin_tools/nu_ApplyBackground_Depth_KIRIA.py')
+os.system('python ./yochin_tools/nu_makeSuffleRowsText.py')
+print >> fid, 'ApplyBackground&shuffle : ', datetime.datetime.now()
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.system('CUDA_VISIBLE_DEVICES=1 ./experiments/scripts/faster_rcnn_end2end.sh gpu 0 VGG16 slsv1 --set EXP_DIR VGGnet-ETRI RNG_SEED 42 TRAIN.SCALES "[400,500,600,700]"')
+
+# print the end time on the file
+print >> fid, 'stop time : ', datetime.datetime.now()
+fid.close()

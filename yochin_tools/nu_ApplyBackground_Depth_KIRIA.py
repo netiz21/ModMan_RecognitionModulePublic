@@ -96,14 +96,14 @@ if __name__ == '__main__':
     do_iaa_augmentation = True
 
     # Official Test
-    imageFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan.SLS.DB.2017-03-21/ModMan.SLS.DB.2017-03-21'
-    backgFolder = '/media/yochin/ModMan DB/otherDBs/NewNegative'  # 배경: 약 8000장
-    listCategory = ['Ace', 'Apple', 'Cheezit', 'Chiffon', 'Crayola',
-                    'Drill', 'Genuine', 'Mustard', 'TomatoSoup', 'airplane']
+    imageFolder = '/media/yochin/ModMan DB2/ModMan DB/ETRI_HMI/SLS.3DPose/SLSv1.2017-03-21(26Objs,5616Images)/ModMan.SLS.DB.2017-03-21'
+    backgFolder = '/media/yochin/ModMan DB2/otherDBs/NewNegative'  # 배경: 약 8000장
+    listCategory = ['Ace', 'Cheezit', 'Chiffon', 'Crayola', 'Drill',
+                    'Genuine', 'Mustard', 'TomatoSoup', 'airplane', 'Waffle']
 
     # this is for ModManDB portable storage
     # saveBaseFolder = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/SLS.3DPose/ModMan_SLSv1/data/'
-    saveBaseFolder = '/home/yochin/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
+    saveBaseFolder = '/home/yochin/Desktop/ModMan_ETRI/data/'
     savedFolder_Infos = saveBaseFolder + 'Annotations'
     savedFolder_Images = saveBaseFolder + 'Images'
     savedFolder_ImageSets = saveBaseFolder + 'ImageSets'
