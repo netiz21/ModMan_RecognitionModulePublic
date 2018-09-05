@@ -14,8 +14,17 @@ CLASSES = ('__background__', # always index 0
            'moncher', 'cheezit', 'chococo') # 'sponge'
 
 Candidate_CLASSES = (
-    'ace', 'airplane', 'drill', 'mustard', 'waffle',
-    'chiffon', 'crayola', 'genuine', 'tomatosoup', 'cheezit')
+    'cheezit', 'mustard', 'tomatosoup',
+    'ace', 'cheezit', 'crayola', 'drill', 'moncher', 'mustard', 'waffle', 'chiffon', 'genuine', 'tomatosoup'
+)
+
+# pose estimation v3 dataset
+# 'cheezit', 'mustard', 'tomatosoup'
+# pose estimation v1 dataset
+# above + 'ace', 'cheezit', 'crayola', 'drill', 'moncher', 'mustard', 'waffle', 'chiffon', 'genuine', 'tomatosoup',
+
+
+    # 'airplane'
     #'strawberry', 'papermate', 'highland', 'mark',
            # 'expo', 'champion', 'apple', 'cup',
            # 'banana', 'scissors',
@@ -64,7 +73,7 @@ LEN_CHUNK = 10240                       # if the server cannot receive all data,
 '''
 Pose estimation
 '''
-POSE_EST_TH_CORRESPONDENCES = 20        # default 20
+POSE_EST_TH_CORRESPONDENCES = 50        # default 20
 POSE_EST_TH_INLIERS = 10                 # default 10
 
 

@@ -20,7 +20,7 @@ from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 
 # ModMan module & Pose estimation
-from PoseEst.Function_Pose_v1 import *
+from PoseEst.Function_Pose_v3 import *
 import math
 
 import tensorflow as tf
@@ -207,7 +207,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                         fontColor = (255, 255, 255)
                         cv2.rectangle(im, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), fontColor, fontThickness)
 
-                    cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (int(bbox[0]), int(bbox[1] - 2)), fontFace, fontScale, fontColor, thickness = fontThickness)
+                    cv2.putText(im, '{:s} {:.1f}'.format(class_name, score*100), (int(bbox[0]), int(bbox[1] - 2)), fontFace, fontScale, fontColor, thickness = fontThickness)
 
                     ret_list_BB.append({'bbox': bbox, 'score': score, 'name': class_name})
 
@@ -596,21 +596,14 @@ if __name__ == '__main__':
         cap = cv2.VideoCapture('/home/yochin/Desktop/demo_avi.mp4')
 
     tfArch = 'VGGnetslsv1_test'  # prototxt
-    # tfArch = 'Resnet50_test'  # prototxt
-    # tfmodel = './output/Resnet50/train/VGGnet_fast_rcnn_iter_140000.ckpt'
-    # tfmodel = './output/Resnet_scriptItself/voc_2007_trainval/Resnet50_iter_140000.ckpt'
-    # tfmodel = '../output/VGGnet_140000_noFlipped_DBV8_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
-    # tfmodel = '../output/VGGnet_140000_Prj-RealSingle10375/train/VGGnet_fast_rcnn_iter_70000.ckpt'    # real db
-    # tfmodel = '../output/VGGnet_140000_noFlipped_DBV11_10obj_train/train/VGGnet_fast_rcnn_iter_140000.ckpt'
-    # tfmodel = '../output/2. VGGnet_140000_Prj-RealSingle8883_SynthTwo9150_ExcSponageOrange/train/VGGnet_fast_rcnn_iter_70000.ckpt'  # real db
-    # tfmodel = '../output/VGGnet-RealSingle_SynthMultiObj234/train/VGGnet_fast_rcnn_iter_70000.ckpt'
     tfmodel = '../models/VGGnet_fast_rcnn_iter_70000.ckpt'
-
+    # tfmodel = '../output/VGGnet-RealSingle_SynthMultiObj234/train/VGGnet_fast_rcnn_iter_70000.ckpt'
 
     # init session
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7)
-    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True))
-    # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
+    # gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction = 0.7)
+    # sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True))
+
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
     # , device_count = {'GPU': 0}
     tf.device('')
     # load network

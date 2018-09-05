@@ -44,7 +44,7 @@ This script is for Synthetic Learning dataset
 Below is to gauge the training time.
 '''
 # print the start time on the file
-fid = open('/home/yochin/Desktop/ModMan_ETRI/log2.txt', 'w')
+fid = open('/home/yochin/Desktop/ModMan_ETRI/log2_temp.txt', 'w')
 print >> fid, 'start time : ', datetime.datetime.now()
 
 os.system('python ./yochin_tools/nu_ApplyBackground_Depth_KIRIA.py')
