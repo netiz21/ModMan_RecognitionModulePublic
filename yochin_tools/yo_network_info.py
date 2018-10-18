@@ -13,9 +13,10 @@ CLASSES = ('__background__', # always index 0
            'drill', 'mustard', 'waffle', 'ace', 'airplane',
            'moncher', 'cheezit', 'chococo') # 'sponge'
 
+# Candidate_CLASSES = CLASSES
 Candidate_CLASSES = (
     'cheezit', 'mustard', 'tomatosoup',
-    'ace', 'cheezit', 'crayola', 'drill', 'moncher', 'mustard', 'waffle', 'chiffon', 'genuine', 'tomatosoup'
+    'ace', 'crayola', 'drill', 'moncher', 'waffle', 'chiffon', 'genuine'
 )
 
 # pose estimation v3 dataset

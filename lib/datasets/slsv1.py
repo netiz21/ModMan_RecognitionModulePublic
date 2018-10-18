@@ -29,8 +29,11 @@ import yochin_tools.yo_network_info as yo_network_info
 
 DB_LIST = yo_network_info.CLASSES
 
+
+#'/home/yochin/Desktop/data_realSingle_SynthTwoThreeFourObjs'
+
 class slsv1(imdb):
-    def __init__(self, image_set, devkit_path='/home/yochin/Desktop/ModMan_ETRI'):       # '/media/yochin/DataStorage/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1'
+    def __init__(self, image_set, devkit_path='/home/yochin/Desktop/ModMan_ETRI'):
         imdb.__init__(self, image_set)
         self._image_set = image_set
         self._devkit_path = devkit_path

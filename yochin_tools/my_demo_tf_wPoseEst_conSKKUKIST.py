@@ -333,7 +333,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                                 pt2DGPs = computeTransfrom(ptGPs, rmat, tvec, extMat, init_coord)
                                 pt2DGPs = np.transpose(pt2DGPs)
                                 for ptDisp in pt2DGPs:
-                                    cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 7, (0,0,0,0), -1)
+                                    cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 3, (180,150,100,0), -1)
 
                     if len(strEstPathname) > 0:
                         tag_object = Element('object')
@@ -488,7 +488,7 @@ if __name__ == '__main__':
                         # 5: working as server for IPad,
                         # 6: Realsense Camera
                         # 7: working as server for SR300
-    USE_POSEESTIMATE = True
+    USE_POSEESTIMATE = False
 
     AR_IP = '129.254.87.77'
     AR_PORT = 8020
