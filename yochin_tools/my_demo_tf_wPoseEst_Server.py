@@ -443,6 +443,8 @@ class ThreadedClient(object):
         cmd = '%c%c'%(struct.unpack('c', cmd_raw[0])[0], struct.unpack('c', cmd_raw[1])[0])
 
         size_iPad_image = 2224 * 1668 * 3
+        if USE_REDUCED_IPAD_RESOL == True:
+            size_iPad_image = 640 * 480 * 3
         size_sr300_image = 640 * 480 * 3
 
         if len(cmd) == 2:
@@ -597,6 +599,8 @@ class ThreadedClient(object):
                         py = struct.unpack('f', data_params[12:])[0]  # py
 
                         if USE_REDUCED_IPAD_RESOL == True:
+                            fx = fx * 0.2878
+                            fy = fy * 0.2878
                             px = px * 0.2878
                             py = py * 0.2878
 
@@ -613,6 +617,8 @@ class ThreadedClient(object):
 
                     if cmd[0] == 'e':
                         # iPad original resolution
+                        # if you change below code related to resolution,
+                        # you also change the code about buf_size in self.parsing_cmd().
                         self.IMG_WIDTH = 2224
                         self.IMG_HEIGHT = 1668
                         if USE_REDUCED_IPAD_RESOL == True:
@@ -647,6 +653,10 @@ class ThreadedClient(object):
                     len_rcv = 0
 
                 elif ing_rcv == True:  # receive again.
+                    # debug for message ending.
+                    #print('MME' in data)
+                    #if 'MME' in data:
+                    #    print(data.index('MME') + len_rcv == buf_size-3)
                     if ('MME' in data) and (data.index('MME') + len_rcv == buf_size-3):
                         ing_rcv = False
                         index_end = data.index('MME')
@@ -673,7 +683,7 @@ class ThreadedClient(object):
                         len_rcv = len_rcv + len(data)
 
                         # print(data)
-                # print('intermediate: %d == %d' % (AR_NET_BUFSIZE, len_rcv))
+                # print('intermediate: %d (exclude MMS, cmd, int/ext params=69bytes)' % (len_rcv))
 
             print('Server (%s, %c): received data completely'%(address, self.owner))
 
