@@ -909,7 +909,7 @@ if __name__ == '__main__':
     Settings
     '''
     USE_POSEESTIMATE = True
-    USE_REDUCED_IPAD_RESOL = True
+    USE_REDUCED_IPAD_RESOL = True       # True: 640x480, False: 2224x1668
 
     Svr_IP = yo_network_info.SERVER_IP
     Svr_PORT = yo_network_info.SERVER_PORT
