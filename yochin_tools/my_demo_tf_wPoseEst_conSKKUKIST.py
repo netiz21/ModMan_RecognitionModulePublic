@@ -20,7 +20,7 @@ from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 
 # ModMan module & Pose estimation
-from PoseEst.Function_Pose_v3 import *
+from PoseEst.Function_Pose_v5 import *
 import math
 
 import tensorflow as tf
@@ -45,7 +45,7 @@ CLASSES = yo_network_info.CLASSES
 Candidate_CLASSES = yo_network_info.Candidate_CLASSES
 NUM_CLASSES = yo_network_info.NUM_CLASSES
 
-CONF_THRESH = 0.6
+CONF_THRESH = yo_network_info.DETECTION_TH
 NMS_THRESH = 0.3
 
 # Checks if a matrix is a valid rotation matrix.
@@ -122,34 +122,7 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.tight_layout()
     plt.draw()
 
-def demo(sess, net, im):
-    """Detect object classes in an image using pre-computed object proposals."""
-
-    # Detect all object classes and regress object bounds
-    timer = Timer()
-    timer.tic()
-    scores, boxes = im_detect(sess, net, im)
-    timer.toc()
-    # print ('Detection took {:.3f}s for '
-    #        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
-
-    # Visualize detections for each class
-    for cls_ind, cls in enumerate(CLASSES[1:]):
-        cls_ind += 1 # because we skipped background
-        cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
-        cls_scores = scores[:, cls_ind]
-        dets = np.hstack((cls_boxes,
-                          cls_scores[:, np.newaxis])).astype(np.float32)
-        keep = nms(dets, NMS_THRESH)
-        dets = dets[keep, :]
-        vis_detections(im, cls, dets, thresh=CONF_THRESH)
-
 def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB=None, GeoDB=None):
-    # scalefactor = 300. / float(min(im.shape[0], im.shape[1]))
-    # tw = int(im.shape[1] * scalefactor)
-    # th = int(im.shape[0] * scalefactor)
-    # im = cv2.resize(im, (tw, th))
-
     ret_list_forKIST = []
     ret_list_BB = []
 
@@ -333,7 +306,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                                 pt2DGPs = computeTransfrom(ptGPs, rmat, tvec, extMat, init_coord)
                                 pt2DGPs = np.transpose(pt2DGPs)
                                 for ptDisp in pt2DGPs:
-                                    cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 7, (0,0,0,0), -1)
+                                    cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 3, (250,150,100,0), -1)
 
                     if len(strEstPathname) > 0:
                         tag_object = Element('object')
@@ -353,7 +326,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
 
                             xyz = rotationMatrixToEulerAngles(rmat)
                             SubElement(tag_object, 'EulerAngles').text = str(xyz)
-
+    cv2.namedWindow('display', cv2.WINDOW_KEEPRATIO)
     cv2.imshow('display', im)
     cv2.waitKey(10)
 
@@ -488,7 +461,9 @@ if __name__ == '__main__':
                         # 5: working as server for IPad,
                         # 6: Realsense Camera
                         # 7: working as server for SR300
+    USE_DETECTION = True
     USE_POSEESTIMATE = True
+
 
     AR_IP = '129.254.87.77'
     AR_PORT = 8020
@@ -501,9 +476,10 @@ if __name__ == '__main__':
     DO_WRITE_RESULT_AVI = False
     name_output_avi = 'output.avi'
 
-    DO_WRITE_RESULT_IMG = True     # IMG name is the current timeshot.
+    DO_WRITE_RESULT_IMG = False     # IMG name is the current timeshot.
+    DO_SAVEDEBUGIMAGE = False
 
-    # for test
+    # for detection
     cfg.NCLASSES = NUM_CLASSES
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
     cfg.TEST.BBOX_REG = True  # Use BBox regressor
@@ -520,6 +496,7 @@ if __name__ == '__main__':
     cfg.TEST.RPN_POST_NMS_TOP_N = 2000
     CONF_THRESH = 0.8
     # cfg.TEST.MAX_SIZE = 2000
+    print(cfg.TEST)
 
     if INPUT_TYPE == 2:  # Image
         avgwindow = 1
@@ -572,11 +549,12 @@ if __name__ == '__main__':
             if cap.isOpened() == True:
                 print('camera %d is openned'%i_temp)
                 break
+        print('%d x %d'%(cap.get(3), cap.get(4)))
         # cap.set(3, 640*2)
         # cap.set(4, 480*2)
     elif INPUT_TYPE == 6:
         serv = pyrs.Service()
-        # pyrs.start()
+        pyrs.start()
 
         '''
         pyrc.stream
@@ -661,7 +639,7 @@ if __name__ == '__main__':
         cam.stop()
         serv.stop()
 
-    if INPUT_TYPE == 0 or INPUT_TYPE == 3:
+    elif INPUT_TYPE == 0 or INPUT_TYPE == 3:
         while (True):
             t = time.time()
             ret, frame = cap.read()
@@ -677,7 +655,8 @@ if __name__ == '__main__':
             # frame = cv2.flip(frame, 1)
 
             if ret is True:
-                cv2.imwrite('./debug_img.png', frame)
+                if DO_SAVEDEBUGIMAGE == True:
+                    cv2.imwrite('./debug_img.png', frame)
 
                 if USE_POSEESTIMATE is True:
                     im, list_objs_forKIST, _ = demo_all(sess, net, frame, '', extMat, FeatureDB, CoorDB, GeoDB)

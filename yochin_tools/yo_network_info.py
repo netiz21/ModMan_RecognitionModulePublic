@@ -1,5 +1,5 @@
-# PATH_BASE = '/home/jang/smallcorgi_Faster-RCNN_TF_yochin'
-PATH_BASE = '/home/yochin/Faster-RCNN_TF'
+PATH_BASE = '/home/jang/smallcorgi_Faster-RCNN_TF_yochin'
+#PATH_BASE = '/home/yochin/Faster-RCNN_TF'
 # PATH_BASE = '/home/etrimodman/smallcorgi_Faster-RCNN_TF_yochin'
 
 '''
@@ -57,16 +57,21 @@ network
 '''
 # if you do not assign the address ip, then the server will guess using command.
 # # KIST
-# KIST_STATIC_IP = '192.168.137.4'
+# KIST_STATIC_IP = '192.168.137.4'    # this and below address is required to know that which client is etri or kist.
 # ETRI_STATIC_IP = '192.168.137.3'
 # SERVER_IP = '192.168.137.50'        # '129.254.87.77'
 
-# ETRI
-KIST_STATIC_IP = '129.254.87.77'
-ETRI_STATIC_IP = '129.254.87.77'
-SERVER_IP = '129.254.87.77'
-SERVER_PORT = 8020
+# # ETRI - using Internet
+# KIST_STATIC_IP = '129.254.87.77'
+# ETRI_STATIC_IP = '129.254.87.77'
+# SERVER_IP = '129.254.87.77'
+# SERVER_PORT = 8020
 
+# ETRI - using local connection
+KIST_STATIC_IP = '192.168.0.50'
+ETRI_STATIC_IP = '192.168.0.50'
+SERVER_IP = '192.168.0.50'
+SERVER_PORT = 8020
 
 LEN_CHUNK = 10240                       # if the server cannot receive all data, then reduce the # of LEN_CHUNK.
 
