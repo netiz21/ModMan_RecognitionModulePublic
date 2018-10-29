@@ -11,7 +11,7 @@ TH_CORRESPONDENCES = yo_network_info.POSE_EST_TH_CORRESPONDENCES
 TH_INLIERS = yo_network_info.POSE_EST_TH_INLIERS
 
 def ReadDB(classname) :
-    strPath = os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1_SURF.mat')
+    strPath = os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1_SIFT_color_siftsurf.mat')
     if os.path.exists(strPath):
         ftr = io.loadmat(strPath)
     else:
@@ -33,69 +33,49 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
         imgg =cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
         # imgg = cv2.medianBlur(imgg, 3)
         # opencv3.~
-        surf = cv2.xfeatures2d.SURF_create()
-        kp, descritors = surf.detectAndCompute(imgg,None)
-
-        #for ptDisp in kp:
-        #     cv2.circle(img, (int(ptDisp.pt[0]), int(ptDisp.pt[1])), 1, (255, 255, 255, 0), -1)
-
+        surf = cv2.xfeatures2d.SURF_create(nOctaves = 5,nOctaveLayers = 3,hessianThreshold=0.3)
+        surf2 = cv2.xfeatures2d.SURF_create(nOctaves = 3,nOctaveLayers = 2, hessianThreshold=0.05)
+        kp = surf.detect(imgg, None)
+        kp,descritors1 = surf.compute(img[:,:,0], kp)
+        kp,descritors2 = surf.compute(img[:,:,1], kp)
+        kp,descritors3 = surf.compute(img[:,:,2], kp)
+        kp,descritors4 = surf2.compute(img[:,:,0], kp)
+        kp,descritors5 = surf2.compute(img[:,:,1], kp)
+        kp,descritors6 = surf2.compute(img[:,:,2], kp)
+        descritors = np.concatenate([descritors1,descritors2,descritors3,descritors4,descritors5,descritors6],axis=1)
         FLANN_INDEX_KDTREE = 0
-        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-        search_params = dict(checks=150)
-        bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
-        matches = bf.knnMatch(descritors,FeatureDB,k=2)
-        threshold = 0.75
-        good = []
-        for m,n in matches:
-            if m.distance < threshold*n.distance or np.sum((CoorDB[m.trainIdx,:] - CoorDB[n.trainIdx,:])**2)<0.3:
-                good.append(m)
-        matches = good
+        index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 4)
+        search_params = dict(checks=300)   # or pass empty dictionary
+        flann = cv2.FlannBasedMatcher(index_params,search_params)
+        matches = flann.knnMatch(descritors,FeatureDB,k=2) #k controls the numbers of matches per each descriptor
+        matches2 = sorted(matches, key=lambda x:x[0].distance/(x[1].distance))
+        matches=matches2[0:max(int(round(len(matches)*1/10)),50)]		# matches=matches[0:max(int(round(len(matches)*3/7)),30)]
 
-        #for ptDisp in good:
-        #    cv2.circle(img, (int(kp[ptDisp.queryIdx].pt[0]), int(kp[ptDisp.queryIdx].pt[1])), 2,
-        #               (int((CoorDB[ptDisp.trainIdx,0]+100)/200.*255.),
-        #                int((CoorDB[ptDisp.trainIdx,1]+50)/100.*255.),
-        #                int((CoorDB[ptDisp.trainIdx,2]+30)/60.*255.), 0), -1)
+        objpoints = np.zeros((len(matches),3),np.float32)
+        imgpoints=np.zeros((len(matches),2),np.float32)    
+        tempCoord = np.zeros((1,3),np.float32)
+        tempkey = np.zeros((1,2),np.float32)
+        for m in xrange(len(matches)):
+            tempCoord[:,0] = CoorDB[matches[m][0].trainIdx,0]
+            tempCoord[:,1] = CoorDB[matches[m][0].trainIdx,1]
+            tempCoord[:,2] = CoorDB[matches[m][0].trainIdx,2]
+            objpoints[m,:] = tempCoord
+            tempkey[:,0] = kp[matches[m][0].queryIdx].pt[1]
+            tempkey[:,1] = kp[matches[m][0].queryIdx].pt[0]
+            imgpoints[m,:] = tempkey
 
 
-        print('\tnum corrs : %d' % (len(good)))
-
-        if len(good) >= TH_CORRESPONDENCES:
-            objpoints = np.zeros((len(matches),3),np.float32)
-            imgpoints=np.zeros((len(matches),2),np.float32)
-            tempCoord = np.zeros((1,3),np.float32)
-            tempkey = np.zeros((1,2),np.float32)
-            for m in xrange(len(matches)):
-                tempCoord[:,1] = CoorDB[matches[m].trainIdx,0]  *1000.    # x
-                tempCoord[:,2] = -CoorDB[matches[m].trainIdx,1]    *1000.  # y
-                tempCoord[:,0] = CoorDB[matches[m].trainIdx,2]   *1000.   # z
-                objpoints[m,:] = tempCoord
-                tempkey[:,0] = kp[matches[m].queryIdx].pt[1]        # x
-                tempkey[:,1] = kp[matches[m].queryIdx].pt[0]        # y
-                imgpoints[m,:] = tempkey
             objpoints = objpoints.astype('float32')
             imgpoints = imgpoints.astype('float32')
-            # imgpoints[:,0] = imgpoints[:,0] + init_coord[1]
-            # imgpoints[:,1] = imgpoints[:,1] + init_coord[0]
-            objpoints = np.expand_dims(objpoints, axis=0)
-            imgpoints = np.expand_dims(imgpoints, axis=0)
-            imgpoints[:,:,0] = imgpoints[:,:,0]+init_coord[1]
-            imgpoints[:,:,1] = imgpoints[:,:,1]+init_coord[0]
-            # ret = np.zeros((3,3))
-            # ret[0,0] = 1158.03
-            # ret[1,1] = 1158.03
-            # ret[0,2] = 540.
-            # ret[1,2] = 960.
-            # ret[2,2] = 1
-
-            rvec = np.expand_dims([ 0.04110314, -2.37024752, 0.37337192], axis = 1)
-            tvec = np.expand_dims([  42.53222017, 36.96097125, 488.19154566], axis = 1)
-            dist = np.array([[0.0, 0.0, 0.0, 0.0]])
-
+            ErrorThreshold = 3.0
             print('do PnPRansac')
-            (_, rvec,tvec,inliers)= cv2.solvePnPRansac(objpoints, imgpoints, ret, dist, rvec = rvec, tvec = tvec, reprojectionError=3.0, iterationsCount=1000) # flags = cv2.SOLVEPNP_P3P, rvec=rvec, tvec=tvec, useExtrinsicGuess=True
+            (_, rvec,tvec,inliers)= cv2.solvePnPRansac(objpoints, imgpoints, ret, dist, rvec = rvec, tvec = tvec, reprojectionError=3.0, iterationsCount=100) # flags = cv2.SOLVEPNP_P3P, rvec=rvec, tvec=tvec, useExtrinsicGuess=True
             #(_, rvec, tvec) = cv2.solvePnP(objpoints, imgpoints, ret, dist)  # flags = cv2.SOLVEPNP_P3P, iterationsCount=1000, rvec=rvec, tvec=tvec, useExtrinsicGuess=True
-
+            while  type(inliers) == NoneType or len(inliers)<int(round(len(matches)*1/2)) or tvec[0]<0: 
+                ErrorThreshold = ErrorThreshold+0.5
+                (_, rvec,tvec,inliers)= cv2.solvePnPRansac(objpoints, imgpoints, ret, dist,reprojectionError=ErrorThreshold)
+                if ErrorThreshold>20.:
+                    break
             # # for debugging
             # print(rvec)
             # print(tvec)
@@ -106,30 +86,26 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
             #                 int((objpoints[0,iii, 2] + 30) / 60. * 255.), 0), -1)
 
 
-            if inliers is not None:
-                print('\tnum inliers : %d' % (len(inliers)))
-                if len(inliers) >= TH_INLIERS:
+        if inliers is not None:
+            print('\tnum inliers : %d' % (len(inliers)))
+            if len(inliers) >= TH_INLIERS:
                     # tvec[0] = 0
                     # tvec[2] = -tvec[2]+745
                     # tvec[0] = -tvec[2]
-                    rmat = cv2.Rodrigues(rvec)[0]
+                rmat = cv2.Rodrigues(rvec)[0]
                     # rmat2 = rmat[[2,1,0],:]
                     # rmat2 = rmat2[:,[2,1,0]]
                     # rmat2[[0,2],:] = -rmat2[[0,2],:]
-                else:
-                    rmat = np.zeros((3, 3))
-                    tvec = np.zeros((3, 1))
             else:
-                print('\tnum inliers : 0')
                 rmat = np.zeros((3, 3))
                 tvec = np.zeros((3, 1))
         else:
-            print('\tnum corrs : %d < TH %d' % (len(good), TH_CORRESPONDENCES))
+            print('\tnum inliers : 0')
             rmat = np.zeros((3, 3))
             tvec = np.zeros((3, 1))
+
     except:
-        print('\texcept error')
-        print('\tcheck now you use opencv ver: %s'%cv2.__version__)
+        print('\texcept')
         rmat = np.zeros((3, 3))
         tvec = np.zeros((3, 1))
 

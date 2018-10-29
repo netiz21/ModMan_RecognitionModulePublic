@@ -488,7 +488,7 @@ if __name__ == '__main__':
                         # 5: working as server for IPad,
                         # 6: Realsense Camera
                         # 7: working as server for SR300
-    USE_POSEESTIMATE = False
+    USE_POSEESTIMATE = True
 
     AR_IP = '129.254.87.77'
     AR_PORT = 8020
@@ -565,6 +565,8 @@ if __name__ == '__main__':
             # strTRSet = os.path.join(basePath, '%s-rotate-geom_00_00_50_400mat.mat'%obj)
             ftr = h5py.File(strTRSet, 'r')
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
+
+            print('\t%s pose DB is loaded.'%obj)
 
     if INPUT_TYPE == 0:
         for i_temp in range(0, 10):
