@@ -42,7 +42,7 @@ case $DATASET in
     TRAIN_IMDB="slsv1_train"
     TEST_IMDB="slsv1_test"
     PT_DIR="slsv1"
-     ITERS=40000
+    ITERS=40000
     ;;
   *)
     echo "No dataset given"
@@ -56,6 +56,7 @@ echo Logging output to "$LOG"
 
 # source activate ModMan
 #  --resume 1 \
+#  --weights data/pretrained_model/VGG_imagenet.npy \
 time python ./tools/train_net.py --device ${DEV} --device_id ${DEV_ID} \
   --weights data/pretrained_model/VGG_imagenet.npy \
   --imdb ${TRAIN_IMDB} \

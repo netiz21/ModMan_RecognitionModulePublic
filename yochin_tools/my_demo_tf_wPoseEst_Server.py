@@ -443,6 +443,8 @@ class ThreadedClient(object):
         cmd = '%c%c'%(struct.unpack('c', cmd_raw[0])[0], struct.unpack('c', cmd_raw[1])[0])
 
         size_iPad_image = 2224 * 1668 * 3
+        if USE_REDUCED_IPAD_RESOL == True:
+            size_iPad_image = 640 * 480 * 3
         size_sr300_image = 640 * 480 * 3
 
         if len(cmd) == 2:
@@ -596,7 +598,14 @@ class ThreadedClient(object):
                         px = struct.unpack('f', data_params[8:12])[0]  # px
                         py = struct.unpack('f', data_params[12:])[0]  # py
 
+                        if USE_REDUCED_IPAD_RESOL == True:
+                            fx = fx * 0.2878
+                            fy = fy * 0.2878
+                            px = px * 0.2878
+                            py = py * 0.2878
+
                         print('Set intrinsic param: fxfy (%f, %f), pxpy (%f, %f)' % (fx, fy, px, py))
+
                         self.extMat[0, 0] = fy  # fy
                         self.extMat[1, 1] = fx  # fx
                         self.extMat[0, 2] = py  # py
@@ -607,8 +616,16 @@ class ThreadedClient(object):
                         self.extMat = getCamIntParams('SR300')
 
                     if cmd[0] == 'e':
+                        # iPad original resolution
+                        # if you change below code related to resolution,
+                        # you also change the code about buf_size in self.parsing_cmd().
                         self.IMG_WIDTH = 2224
                         self.IMG_HEIGHT = 1668
+                        if USE_REDUCED_IPAD_RESOL == True:
+                            # iPad reduced resolution
+                            self.IMG_WIDTH = 640
+                            self.IMG_HEIGHT = 480
+                            print('iPad reduced resolution (640x480) applied')
                     elif cmd[0] == 'k':
                         self.IMG_WIDTH = 640
                         self.IMG_HEIGHT = 480
@@ -636,6 +653,10 @@ class ThreadedClient(object):
                     len_rcv = 0
 
                 elif ing_rcv == True:  # receive again.
+                    # debug for message ending.
+                    #print('MME' in data)
+                    #if 'MME' in data:
+                    #    print(data.index('MME') + len_rcv == buf_size-3)
                     if ('MME' in data) and (data.index('MME') + len_rcv == buf_size-3):
                         ing_rcv = False
                         index_end = data.index('MME')
@@ -662,7 +683,7 @@ class ThreadedClient(object):
                         len_rcv = len_rcv + len(data)
 
                         # print(data)
-                # print('intermediate: %d == %d' % (AR_NET_BUFSIZE, len_rcv))
+                # print('intermediate: %d (exclude MMS, cmd, int/ext params=69bytes)' % (len_rcv))
 
             print('Server (%s, %c): received data completely'%(address, self.owner))
 
@@ -888,6 +909,7 @@ if __name__ == '__main__':
     Settings
     '''
     USE_POSEESTIMATE = True
+    USE_REDUCED_IPAD_RESOL = True       # True: 640x480, False: 2224x1668
 
     Svr_IP = yo_network_info.SERVER_IP
     Svr_PORT = yo_network_info.SERVER_PORT
@@ -908,8 +930,8 @@ if __name__ == '__main__':
     '''
     if DO_WRITE_RESULT_AVI == True:
         # Define the codec and create VideoWriter object
-        frame_width = 720
-        frame_height = 404
+        frame_width = 640
+        frame_height = 480
         outavi = cv2.VideoWriter(name_output_avi, cv2.VideoWriter_fourcc('M','J','P','G'), 15.0, (frame_width, frame_height))
 
 

@@ -306,7 +306,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                                 pt2DGPs = computeTransfrom(ptGPs, rmat, tvec, extMat, init_coord)
                                 pt2DGPs = np.transpose(pt2DGPs)
                                 for ptDisp in pt2DGPs:
-                                    cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 3, (250,150,100,0), -1)
+                                    cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 3, (180,150,100,0), -1)
 
                     if len(strEstPathname) > 0:
                         tag_object = Element('object')
@@ -464,7 +464,6 @@ if __name__ == '__main__':
     USE_DETECTION = True
     USE_POSEESTIMATE = True
 
-
     AR_IP = '129.254.87.77'
     AR_PORT = 8020
 
@@ -542,6 +541,8 @@ if __name__ == '__main__':
             # strTRSet = os.path.join(basePath, '%s-rotate-geom_00_00_50_400mat.mat'%obj)
             ftr = h5py.File(strTRSet, 'r')
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
+
+            print('\t%s pose DB is loaded.'%obj)
 
     if INPUT_TYPE == 0:
         for i_temp in range(0, 10):

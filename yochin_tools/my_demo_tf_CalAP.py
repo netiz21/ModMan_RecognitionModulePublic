@@ -158,8 +158,9 @@ if __name__ == '__main__':
     cfg.TEST.SCALES = (600,)  # only one for test
 
     tfArch = 'VGGnetslsv1_test'  # prototxt
-    prjName = 'VGGnet-RealSingle_SynthMultiObj234'
-    tfmodel = '../output/%s/train/VGGnet_fast_rcnn_iter_70000.ckpt'%prjName  # real db
+    # prjName = 'VGGnet-RealSingle_SynthMultiObj2'
+    prjName = 'VGGnet-ETRI'
+    tfmodel = '../output/%s/train/VGGnet_fast_rcnn_iter_40000.ckpt'%prjName  # real db
 
     # init session
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, device_count = {'GPU': 1}))
@@ -179,14 +180,14 @@ if __name__ == '__main__':
 
     if False:
         # TestDB - MultiObjectReal-181
-        strBasePath = '/media/yochin/ModMan DB/ModMan DB/ETRI_HMI/real_data_label_set_Total/MultiObjectReal-181'
+        strBasePath = '/media/yochin/0d71bed3-b968-40a1-a28d-bf12275c6299/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/MultiObjectReal-181'
         strImageFolder  = os.path.join(strBasePath, 'Images/')       # 181 multiple objects image files
         strListfilePath = os.path.join(strBasePath, 'ImageSets/test.txt')
         strGndFolder    = os.path.join(strBasePath, 'Annotations/xml/')  # compare with this groundtruth
 
-        strPathResult = '/home/yochin/Desktop/PlayGround_ModMan/EstResult/%s/MultiObjectReal-181/'%prjName         # will save the result xml
+        strPathResult = '../EstResult/%s/MultiObjectReal-181/'%prjName         # will save the result xml
         strPathResultSummary = os.path.join(strPathResult, 'Summary')
-    else:
+    elif True:
         # TestDB - SingleObjectReal-1176
         strBasePath = '/media/yochin/0d71bed3-b968-40a1-a28d-bf12275c6299/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/data_realDB'
         strImageFolder  = os.path.join(strBasePath, 'Images')  # Single Object image files
@@ -194,6 +195,15 @@ if __name__ == '__main__':
         strGndFolder    = os.path.join(strBasePath, 'Annotations/')  # compare with this groundtruth
 
         strPathResult = '../EstResult/%s/SingleObjectReal'%prjName         # will save the result xml
+        strPathResultSummary = os.path.join(strPathResult, 'Summary')
+    elif False:
+        # TestDB - MultiObjectReal-110-KIRIAver
+        strBasePath = '/media/yochin/0d71bed3-b968-40a1-a28d-bf12275c6299/Desktop/ModMan_DB/ETRI_HMI/ModMan_SLSv1/MultiObjectReal-110-selected'
+        strImageFolder = os.path.join(strBasePath, 'Images/')  # 181 multiple objects image files
+        strListfilePath = os.path.join(strBasePath, 'ImageSets/test.txt')
+        strGndFolder = os.path.join(strBasePath, 'Annotations/xml/')  # compare with this groundtruth
+
+        strPathResult = '../EstResult/%s/MultiObjectReal-110-selected/' % prjName  # will save the result xml
         strPathResultSummary = os.path.join(strPathResult, 'Summary')
 
     yo_make_directory(strPathResult)

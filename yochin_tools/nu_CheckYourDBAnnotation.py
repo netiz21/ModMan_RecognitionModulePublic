@@ -22,7 +22,7 @@ if __name__ == '__main__':
     '''
     This is the main function
     '''
-    saveBaseFolder = '../ModMan_DB/ETRI_HMI/ModMan_SLSv1/data/'
+    saveBaseFolder = '/home/yochin/Desktop/ModMan_ETRI/data/'
     savedFolder_Infos = saveBaseFolder + 'Annotations'
     savedFolder_Images = saveBaseFolder + 'Images'
     savedFolder_ImageSets = saveBaseFolder + 'ImageSets'
@@ -36,7 +36,11 @@ if __name__ == '__main__':
         if len(filename) > 0:
 
             if ifile >= 0 and ifile <= 1000000000000000:
-                strFullPathImage = savedFolder_Images + '/' + filename + '.jpg'
+                strFullPathImage = savedFolder_Images + '/' + filename + '.png'
+
+                if os.path.isfile(strFullPathImage) is False:
+                    strFullPathImage = savedFolder_Images + '/' + filename + '.jpg'
+
                 im = cv2.imread(strFullPathImage)
 
                 # text file type
