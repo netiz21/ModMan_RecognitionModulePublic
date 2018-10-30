@@ -14,8 +14,11 @@ def ReadDB(classname) :
     strPath = os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1_SURF.mat')      # '_DB1_SURF.mat'
     if os.path.exists(strPath):
         ftr = io.loadmat(strPath)
+        print('%s is loaded'%strPath)
     else:
-        ftr = io.loadmat(os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1.mat'))
+        strPath = os.path.join(basePath, str(classname).lower(), str(classname).lower() + '_DB1.mat')
+        ftr = io.loadmat(strPath)
+        print('%s is loaded' % strPath)
 
 
     FeatureDB=np.array(ftr['FeatureDB'])

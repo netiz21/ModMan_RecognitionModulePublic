@@ -20,7 +20,7 @@ from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 
 # ModMan module & Pose estimation
-from PoseEst.Function_Pose_v3 import *
+from PoseEst.Function_Pose_v5 import *
 import math
 
 import tensorflow as tf
@@ -155,22 +155,16 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.tight_layout()
     plt.draw()
 
-def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB=None, GeoDB=None):
+def demo_all(sess, snet, im, strEstPathname, stackRmat, stackTvec,extMat=None, FeatureDB=None, CoorDB=None, GeoDB=None):
     ret_list_forKIST = []
     ret_list_BB = []
 
     # Detect all object classes and regress object bounds
     t = time.time()
     scores, boxes = im_detect(sess, net, im)
-    # cv2.waitKey(1000)
-    scores = np.zeros((2000, 23), dtype=np.float)
-    boxes = np.zeros((2000, 92), dtype=np.float)
     elapsed = time.time() - t
-    print('Detect: %.3f\n' % elapsed)
-    # print ('\t\t\t\tDetection took {:.3f}s for '
-    #        '{:d} object proposals').format(timer.total_time, boxes.shape[0])
+    print('Detect: %.3f' % elapsed)
 
-    # im = im[:, :, (2, 1, 0)]  # for plt
 
     t = time.time()
     fontFace = cv2.FONT_HERSHEY_PLAIN;
@@ -224,6 +218,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                     # print('{:s} {:.3f} {:d}'.format(class_name, score, cls_ind))
 
                     if extMat is not None:
+                        t2 = time.time()
                         FeatureDB2 = FeatureDB[Candidate_CLASSES.index(class_name)]
                         CoorDB2 = CoorDB[Candidate_CLASSES.index(class_name)]
                         GeoDB2 = GeoDB[Candidate_CLASSES.index(class_name)]
@@ -238,29 +233,31 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
 
                         cropimg = im_org[cropbox_ly:cropbox_ry, cropbox_lx:cropbox_rx, :]
 
-                        # timestamp = '%d_%d_%d_%d_%d_%d_%d' % (
-                        # datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour,
-                        # datetime.now().minute, datetime.now().second, datetime.now().microsecond)
-                        # cv2.imwrite('./%s.jpg' % timestamp, cropimg)
-                        # print('captured %s image', timestamp)
-
-                        # cv2.namedWindow('crop')
-                        # cv2.imshow('crop', cropimg)
-                        # cv2.waitKey(0)
-                        #
                         print('bbox:')
                         print(bbox)
 
                         init_coord = np.array([cropbox_lx,  cropbox_ly, 0])    # init_coord[x, y, -], lefttop_point
                         rmat, tvec = PoseEstimate(cropimg, FeatureDB2, CoorDB2, extMat, init_coord)
-
+                        stackRmat[:,:,0:4] = stackRmat[:,:,1:5]
+                        stackRmat[:,:,4] = rmat
+                        stackTvec[:,:,0:4] = stackTvec[:,:,1:5]  
+                        stackTvec[:,:,4] = tvec
+                        rmat = np.mean(stackRmat,axis=2)
+                        tvec = np.mean(stackTvec,axis=2)
                         # fid = open('./%s.txt'%timestamp, 'w')
                         # print >> fid, init_coord, '\n\n', tvec, '\n\n', imgpts, '\n\n', objpts
                         # fid.close()
 
-                        print(rmat)
-                        print(tvec)
+                        elapsed2 = time.time() - t2
+                        print('PoseEst: %.3f' % elapsed2)
+
+                        isSuccessPoseEst = False
                         if rmat.sum() == 0 or np.isnan(rmat).any() or np.isnan(tvec).any() == True:
+                            isSuccessPoseEst = False
+                        else:
+                            isSuccessPoseEst = True
+
+                        if isSuccessPoseEst == False:
                             print('cannot find the pose information and fill with dummy values with all zeros')
                             # return for KIST
                             obj_info = {'object': class_name,
@@ -275,30 +272,9 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                                         'bottom': bbox[3]
                                         }
                             ret_list_forKIST.append(obj_info)
-
                         else:
                             init_coord = np.array([0, 0, 0])
                             Result = cornerpointsTransform2(GeoDB2, rmat, tvec, extMat, init_coord)
-
-                            # outDots = np.zeros((4,3))
-                            # outtvecs = np.zeros((1,3))
-
-                            # CCI = Candidate_CLASSES.index(class_name.lower())
-                            # if current[CCI] < avgwindow:
-                            #     current[CCI] = current[CCI] + 1
-                            #     DotLog[:, :, current[CCI] - 1:current[CCI], CCI] = Result[:,:,None]
-                            #     tvecLog[:, :, current[CCI] - 1:current[CCI], CCI] = tvec[:,:,None]
-                            #     outDots = np.mean(DotLog[:, :, current[CCI] - 1:current[CCI], CCI], axis=2)
-                            #     outtvecs = np.mean(tvecLog[:, :, current[CCI] - 1:current[CCI], CCI], axis=2)
-                            # else:
-                            #     DotLog[:, :, 0:current[CCI]-1, CCI] = DotLog[:, :, 1:current[CCI] + 1, CCI]
-                            #     tvecLog[:, :, 0:current[CCI]-1, CCI] = tvecLog[:, :, 1:current[CCI] + 1, CCI]
-                            #     DotLog[:, :, current[CCI] - 1:current[CCI],CCI] = Result[:, :, None]
-                            #     tvecLog[:, :, current[CCI] - 1:current[CCI],CCI] = tvec[:, :, None]
-                            #     outDots = np.mean(DotLog[:, :, :, CCI], axis=2)
-                            #     outtvecs = np.mean(tvecLog[:, :, :, CCI], axis=2)
-                            # Result = outDots
-                            # tvec = outtvecs
 
                             # return for KIST
                             obj_info = {'object': class_name,
@@ -314,14 +290,15 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                                         }
                             ret_list_forKIST.append(obj_info)
 
-                            print('\tRot info: ')
-                            print(rmat)
-                            # print('\tTrn info:\n\t\tx: %d\n\t\ty: %d\n\t\tz: %d' % (tvec[1] * 0.1, -tvec[0] * 0.1, tvec[2] * 0.1))      # *0.1 --> mm to cm
-                            print('\tTvec info: ')
-                            print(tvec)
-                            #print('\tTrn info:\n\t\tx: %d\n\t\ty: %d\n\t\tz: %d' % (tvec[1]/tvec[0], -tvec[0]//tvec[0], tvec[2]/tvec[0]))
+                        print('\tRot info: ')
+                        print(rmat)
+                        # print('\tTrn info:\n\t\tx: %d\n\t\ty: %d\n\t\tz: %d' % (tvec[1] * 0.1, -tvec[0] * 0.1, tvec[2] * 0.1))      # *0.1 --> mm to cm
+                        print('\tTvec info: ')
+                        print(tvec)
+                        #print('\tTrn info:\n\t\tx: %d\n\t\ty: %d\n\t\tz: %d' % (tvec[1]/tvec[0], -tvec[0]//tvec[0], tvec[2]/tvec[0]))
 
-                            # draw axis
+                        if isSuccessPoseEst == True:
+                            # draw axis from Pose Est
                             drawLineIndeces = ((0, 1), (0, 2), (0, 3))
                             colorList = ((255, 0, 0), (0, 255, 0), (0, 0, 255))  # z, y, x
                             for (idxStart, idxEnd), color in zip(drawLineIndeces, colorList):
@@ -335,7 +312,6 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                             # draw center position from a camera (mm -> cm by x 0.1)
                             cv2.putText(im, '(%d, %d, %d)'%(tvec[1] * 0.1, -tvec[0] * 0.1, tvec[2] * 0.1), (int(Result[0][0]), int(Result[0][1])), fontFace, fontScale, fontColor, thickness=fontThickness)
 
-
                             # draw gripping point based the database
                             ptGPs = np.array(yo_network_info.ListGrippingPoint[class_name.lower()])
                             if len(ptGPs) > 0:
@@ -344,6 +320,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                                 for ptDisp in pt2DGPs:
                                     cv2.circle(im, (int(ptDisp[0]), int(ptDisp[1])), 3, (250,150,100,0), -1)
 
+                    # save results as a file. requested by Dr.Lee.
                     if len(strEstPathname) > 0:
                         tag_object = Element('object')
                         SubElement(tag_object, 'name').text = class_name
@@ -362,18 +339,22 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
 
                             xyz = rotationMatrixToEulerAngles(rmat)
                             SubElement(tag_object, 'EulerAngles').text = str(xyz)
+
+    elapsed = time.time() - t
+    print('Drawing: %.3f' % elapsed)
+
+    t = time.time()
     cv2.namedWindow('display', cv2.WINDOW_KEEPRATIO)
     cv2.imshow('display', im)
     cv2.waitKey(10)
-
     elapsed = time.time() - t
-    print('Drawing: %.3f\n' % elapsed)
+    print('cv2.imshow: %.3f\n' % elapsed)
 
     if len(strEstPathname) > 0:
         cv2.imwrite(strEstPathname + '_est.jpg', im)
         ElementTree(tag_anno).write(strEstPathname)
 
-    return im, ret_list_forKIST, ret_list_BB
+    return im, ret_list_forKIST, ret_list_BB, stackRmat, stackTvec
 
 def read_list_linebyline(fname):
     with open(fname) as fid:
@@ -484,35 +465,25 @@ def getCamIntParams(nameDevice):
 
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
     '''
     Settings
     '''
     INPUT_TYPE = 0      # 0: WebCamera,
-                        # 1: Network input from SKKU CAM,
                         # 2: Image,
                         # 3: Video,
-                        # 4: Network input from ETRI(as client),
-                        # 5: working as server for IPad,
                         # 6: Realsense Camera
-                        # 7: working as server for SR300
     USE_DETECTION = True
     USE_POSEESTIMATE = True
 
-
-    AR_IP = '129.254.87.77'
-    AR_PORT = 8020
-
     if USE_POSEESTIMATE == True:    # Cam Intrinsic Params Settings
         extMat = getCamIntParams('C920')
-        # extMat = getCamIntParams('client')
-
 
     DO_WRITE_RESULT_AVI = False
     name_output_avi = 'output.avi'
 
-    # these options are on the top page.
+    # these options are on the top page. do not delete below commented code.
     # DO_WRITE_RESULT_IMG = False     # IMG name is the current timeshot.
     # DO_SAVE_DEBUGIMAGE = False
 
@@ -522,8 +493,7 @@ if __name__ == '__main__':
     cfg.TEST.BBOX_REG = True  # Use BBox regressor
     # # Scales to use during testing (can list multiple scales)
     # # Each scale is the pixel size of an image's shortest side
-    cfg.TEST.SCALES = (688,)  # only one for test  ,480, 576, 688, 864, 1200
-    cfg.TEST.MAX_SIZE = 1000
+    cfg.TEST.SCALES = (1600,)  # only one for test  ,480, 576, 688, 864, 1200
     cfg.TEST.RPN_NMS_THRESH = 0.7
 
     ## Number of top scoring boxes to keep before apply NMS to RPN proposals
@@ -532,7 +502,6 @@ if __name__ == '__main__':
     ## Number of top scoring boxes to keep after applying NMS to RPN proposals
     # cfg.TEST.RPN_POST_NMS_TOP_N = 300
     cfg.TEST.RPN_POST_NMS_TOP_N = 2000
-    CONF_THRESH = 0.8
     # cfg.TEST.MAX_SIZE = 2000
     print(cfg.TEST)
 
@@ -562,6 +531,8 @@ if __name__ == '__main__':
     CoorDB = []
     keypointDB = []
     GeoDB = []
+    stackRmat = np.zeros((3,3,5))
+    stackTvec = np.zeros((3,1,5))
     if USE_POSEESTIMATE == True:
         gap = 4
 
@@ -581,11 +552,13 @@ if __name__ == '__main__':
             ftr = h5py.File(strTRSet, 'r')
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
 
+            print('\t%s pose DB is loaded.'%obj)
+
     if INPUT_TYPE == 0:
-        for i_temp in range(1, 10):
+        for i_temp in range(0, 10):
             cap = cv2.VideoCapture(i_temp)
             if cap.isOpened() == True:
-                print('camera %d is openned'%i_temp)
+                print('camera %d is openned with %d x %d'%(i_temp, cap.get(3), cap.get(4)))
                 break
         # cap.set(3, 640*2)
         # cap.set(4, 480*2)
@@ -617,6 +590,7 @@ if __name__ == '__main__':
         scale = cam.depth_scale * 1000
     elif INPUT_TYPE == 3:
         cap = cv2.VideoCapture('/home/yochin/Desktop/demo_avi.mp4')
+
 
     tfArch = 'VGGnetslsv1_test'  # prototxt
     tfmodel = '../models/VGGnet_fast_rcnn_iter_70000.ckpt'
@@ -673,9 +647,9 @@ if __name__ == '__main__':
                 print(current_depth[gmp_iy, gmp_ix])
 
             if USE_POSEESTIMATE is True:
-                im, list_objs_forKIST, ret_list_BB = demo_all(sess, net, np.array(current_color), '', extMat, FeatureDB, CoorDB, GeoDB)
+                im, list_objs_forKIST, ret_list_BB, stackRmat, stackTvec = demo_all(sess, net, np.array(current_color), '',stackRmat, stackTvec, extMat, FeatureDB, CoorDB, GeoDB)
             else:
-                im, _, _ = demo_all(sess, net, np.array(current_color), '')
+                im, _, _, stackRmat, stackTvec = demo_all(sess, net, np.array(current_color), '',stackRmat, stackTvec)
 
 
 
@@ -688,21 +662,12 @@ if __name__ == '__main__':
         while (True):
             t = time.time()
             # ret, frame = cap.read()
-            # for i in range(4):
-            #     ret = cap.grab()
-            # ret, frame = cap.retrieve(ret)
-            # ret = True
             ret, frame = threadCamera.get_image()
 
             elapsed = time.time() - t
-            print('Capture: %.3f\n'%elapsed)
+            print('Capture: %.3f'%elapsed)
 
             # frame = np.rot90(frame, k=3)
-            #
-            # cv2.namedWindow('Input')
-            # cv2.imshow('Input', frame)
-            # cv2.waitKey
-
             # frame = cv2.flip(frame, 1)
 
             if ret is True:
@@ -710,9 +675,9 @@ if __name__ == '__main__':
                     cv2.imwrite('./debug_img.png', frame)
 
                 if USE_POSEESTIMATE is True:
-                    im, list_objs_forKIST, _ = demo_all(sess, net, frame, '', extMat, FeatureDB, CoorDB, GeoDB)
+                    im, list_objs_forKIST, _, stackRmat, stackTve = demo_all(sess, net, frame, '', stackRmat, stackTvec, extMat, FeatureDB, CoorDB, GeoDB)
                 else:
-                    im, _, _ = demo_all(sess, net, frame, '')
+                    im, _, _, stackRmat, stackTve = demo_all(sess, net, frame, '', stackRmat, stackTvec)
 
                 if DO_WRITE_RESULT_AVI == True:
                     print(im.shape)
@@ -747,177 +712,6 @@ if __name__ == '__main__':
             print('outavi is released')
         cap.release()
         cv2.destroyAllWindows()
-    elif INPUT_TYPE == 1:
-        # # as a client, connect to a KIST server
-        KIST_IP = '192.168.137.13'
-        KIST_PORT= 8000
-        KIST_BUFSIZE = 4096
-        KIST_ADDR = (KIST_IP, KIST_PORT)
-        KIST_clientSocket = socket(AF_INET, SOCK_STREAM)
-
-        try:
-            print('trying to connect the KIST server')
-            KIST_clientSocket.connect(KIST_ADDR)
-        except Exception as e:
-            print('cannot connect the KIST server')
-            sys.exit()
-        print('connected to the KIST server')
-
-        # if we receive the call from kist,
-        # send the request to SKKU server for receiving an image
-        # then calculate the rmat, tvec
-        # tehn send the result to kist
-        SKKU_IMG_WIDTH = 1280
-        SKKU_IMG_HEIGHT = 960
-        SKKU_IP = '192.168.137.5'
-        SKKU_PORT = 9000
-        SKKU_NET_BUFSIZE = (SKKU_IMG_WIDTH * SKKU_IMG_HEIGHT * 3 + 6) * 10
-        SKKU_ADDR = (SKKU_IP, SKKU_PORT)
-        clientSocket = socket(AF_INET, SOCK_STREAM)
-
-        try:
-            print('trying to connect the SKKU server')
-            clientSocket.connect(SKKU_ADDR)
-        except Exception as e:
-            print('cannot connect the SKKU server')
-            sys.exit()
-        print('connected to the SKKU server')
-
-        while True:
-            data = KIST_clientSocket.recv(KIST_BUFSIZE)
-            n_stacked_result = 0
-            # data = 'ETRI'
-
-            if 'ETRI' in data:
-                print('receive _ETRI_ from KIST')
-
-                while True:
-                    ing_rcv = False
-                    len_rcv = 0
-
-                    print('start SKKU')
-                    clientSocket.send('3')  # 1 for streamming, 2 for stopping, 3 for one-shot image
-                    print('send _3_ to SKKU server')
-                    do_capture_success = False
-
-                    while True:
-                        data = clientSocket.recv(SKKU_NET_BUFSIZE)
-
-                        if ing_rcv == False and 'MMS' in data:
-                            ing_rcv = True
-
-                            index_start = data.index('MMS')
-
-                            fid_bin = open('./skku_img.bin', 'wb')
-                            fid_bin.write(data[index_start+3:])
-                            len_rcv = len_rcv + len(data[index_start+3:])
-                        elif ing_rcv == True:
-                            if ('MME' in data) and (data.index('MME') + len_rcv == 960*1280*3):
-                                ing_rcv = False
-                                index_end = data.index('MME')
-                                fid_bin.write(data[:index_end])
-                                fid_bin.close()
-
-                                len_rcv = len_rcv + len(data[:index_end])
-                                # print(len_rcv)
-                                len_rcv = 0
-
-                                img = np.fromfile('./skku_img.bin', dtype='uint8')
-
-                                if len(img) != 960*1280*3:
-                                    print('captured image size is not 960 x 1280 x 3')
-                                    do_capture_success = False
-                                else:
-                                    img = img.reshape(960, 1280, 3)
-                                    do_capture_success = True
-
-                                break
-                            else:
-                                fid_bin.write(data)
-                                len_rcv = len_rcv + len(data)
-
-                        # print(data)
-
-                    print('end SKKU')
-
-                    # # do ETRI job
-                    # # # temp
-                    # img = np.fromfile('./skku_img.bin', dtype='uint8')
-                    # img = img.reshape(960, 1280, 3)
-                    # do_capture_success = True
-
-                    if do_capture_success is True:
-                        # img = cv2.flip(img, 0)
-                        # img2 = img.copy()
-                        # img = (((img.astype(float) / 255.) ** 1.6) * 255).astype('uint8')  # correction
-                        # img[:,:,0] = (img[:,:,0].astype(float)/1.1).astype('uint8')
-
-                        # timestamp = '%d_%d_%d_%d_%d_%d_%d' % (
-                        #     datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour,
-                        #     datetime.now().minute,
-                        #     datetime.now().second, datetime.now().microsecond)
-                        # cv2.imwrite('./%s.jpg' % timestamp, img)
-                        # print('captured %s image', timestamp)
-
-                        if USE_POSEESTIMATE is True:
-                            img, list_objs_forKIST = demo_all(sess, net, img, '', extMat, FeatureDB, CoorDB, GeoDB)
-                        else:
-                            demo_all(sess, net, img, '')
-                    else:
-                        print('no frame\n')
-
-                    do_capture_success = False
-
-                    # cv2.imshow('frame', frame)
-
-                    input_key = cv2.waitKey(10)
-
-                    if len(list_objs_forKIST) > 0:
-                        n_stacked_result = n_stacked_result + 1
-
-                        if n_stacked_result >= avgwindow:
-                            break
-
-                if input_key == ord('q'):
-                    clientSocket.send('2')  # 1 for streamming, 2 for stopping, 3 for one-shot image
-                    print('send 2\n')
-
-                    break
-
-                # send to kist
-                # 4 byte: num of object (int)
-                # 1 byte: obj ID (char)
-                # 4 * (9 + 3) = 48 bytes = rot + trans mat
-                # 4 * 2 = 8 bytes = x, y
-
-                # # temp - start
-                # list_objs_forKIST = []
-                # obj_info = {'object': 'Hello', 'score': 100., 'RMat': np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'TVec': np.array([[10], [20], [30]]),
-                #             'x_center': 100, 'y_center': 200}
-                # list_objs_forKIST.append(obj_info)
-                # # temp - end
-
-                msg = 'MMS'
-                msg = msg + struct.pack('i', len(list_objs_forKIST))  # int
-
-                for obj_KIST in list_objs_forKIST:
-                    msg = msg + struct.pack('c', obj_KIST['object'][0])
-
-                    for j_RMat in range(0, 3):
-                        for i_RMat in range(0, 3):
-                            msg = msg + struct.pack('f', obj_KIST['RMat'][i_RMat][j_RMat])
-
-                    for j_TVec in range(0, 3):
-                        msg = msg + struct.pack('f', obj_KIST['TVec'][j_TVec][0])
-
-                    msg = msg + struct.pack('i', int(obj_KIST['x_center'])) + struct.pack('i', int(obj_KIST['y_center']))
-
-                msg = msg + 'MME'
-
-
-                # for list_objs
-                KIST_clientSocket.send(msg)
-                print('send _%s_ to KIST'%(msg))
     elif INPUT_TYPE == 2:
         # strImageFolder = '/media/yochin/ModMan_DB/ModMan_DB/ETRI_HMI/real_data_label_set_Total/ModMan_SLSv1/data_realDB/Images'  # Single Object image files
         # strImageFolder = '../debug_dropbox_upload/test'
@@ -957,6 +751,177 @@ if __name__ == '__main__':
                     demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'))
 
                 # cv2.waitKey(0)
+    # elif INPUT_TYPE == 1:
+    #     # # as a client, connect to a KIST server
+    #     KIST_IP = '192.168.137.13'
+    #     KIST_PORT= 8000
+    #     KIST_BUFSIZE = 4096
+    #     KIST_ADDR = (KIST_IP, KIST_PORT)
+    #     KIST_clientSocket = socket(AF_INET, SOCK_STREAM)
+    #
+    #     try:
+    #         print('trying to connect the KIST server')
+    #         KIST_clientSocket.connect(KIST_ADDR)
+    #     except Exception as e:
+    #         print('cannot connect the KIST server')
+    #         sys.exit()
+    #     print('connected to the KIST server')
+    #
+    #     # if we receive the call from kist,
+    #     # send the request to SKKU server for receiving an image
+    #     # then calculate the rmat, tvec
+    #     # tehn send the result to kist
+    #     SKKU_IMG_WIDTH = 1280
+    #     SKKU_IMG_HEIGHT = 960
+    #     SKKU_IP = '192.168.137.5'
+    #     SKKU_PORT = 9000
+    #     SKKU_NET_BUFSIZE = (SKKU_IMG_WIDTH * SKKU_IMG_HEIGHT * 3 + 6) * 10
+    #     SKKU_ADDR = (SKKU_IP, SKKU_PORT)
+    #     clientSocket = socket(AF_INET, SOCK_STREAM)
+    #
+    #     try:
+    #         print('trying to connect the SKKU server')
+    #         clientSocket.connect(SKKU_ADDR)
+    #     except Exception as e:
+    #         print('cannot connect the SKKU server')
+    #         sys.exit()
+    #     print('connected to the SKKU server')
+    #
+    #     while True:
+    #         data = KIST_clientSocket.recv(KIST_BUFSIZE)
+    #         n_stacked_result = 0
+    #         # data = 'ETRI'
+    #
+    #         if 'ETRI' in data:
+    #             print('receive _ETRI_ from KIST')
+    #
+    #             while True:
+    #                 ing_rcv = False
+    #                 len_rcv = 0
+    #
+    #                 print('start SKKU')
+    #                 clientSocket.send('3')  # 1 for streamming, 2 for stopping, 3 for one-shot image
+    #                 print('send _3_ to SKKU server')
+    #                 do_capture_success = False
+    #
+    #                 while True:
+    #                     data = clientSocket.recv(SKKU_NET_BUFSIZE)
+    #
+    #                     if ing_rcv == False and 'MMS' in data:
+    #                         ing_rcv = True
+    #
+    #                         index_start = data.index('MMS')
+    #
+    #                         fid_bin = open('./skku_img.bin', 'wb')
+    #                         fid_bin.write(data[index_start+3:])
+    #                         len_rcv = len_rcv + len(data[index_start+3:])
+    #                     elif ing_rcv == True:
+    #                         if ('MME' in data) and (data.index('MME') + len_rcv == 960*1280*3):
+    #                             ing_rcv = False
+    #                             index_end = data.index('MME')
+    #                             fid_bin.write(data[:index_end])
+    #                             fid_bin.close()
+    #
+    #                             len_rcv = len_rcv + len(data[:index_end])
+    #                             # print(len_rcv)
+    #                             len_rcv = 0
+    #
+    #                             img = np.fromfile('./skku_img.bin', dtype='uint8')
+    #
+    #                             if len(img) != 960*1280*3:
+    #                                 print('captured image size is not 960 x 1280 x 3')
+    #                                 do_capture_success = False
+    #                             else:
+    #                                 img = img.reshape(960, 1280, 3)
+    #                                 do_capture_success = True
+    #
+    #                             break
+    #                         else:
+    #                             fid_bin.write(data)
+    #                             len_rcv = len_rcv + len(data)
+    #
+    #                     # print(data)
+    #
+    #                 print('end SKKU')
+    #
+    #                 # # do ETRI job
+    #                 # # # temp
+    #                 # img = np.fromfile('./skku_img.bin', dtype='uint8')
+    #                 # img = img.reshape(960, 1280, 3)
+    #                 # do_capture_success = True
+    #
+    #                 if do_capture_success is True:
+    #                     # img = cv2.flip(img, 0)
+    #                     # img2 = img.copy()
+    #                     # img = (((img.astype(float) / 255.) ** 1.6) * 255).astype('uint8')  # correction
+    #                     # img[:,:,0] = (img[:,:,0].astype(float)/1.1).astype('uint8')
+    #
+    #                     # timestamp = '%d_%d_%d_%d_%d_%d_%d' % (
+    #                     #     datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour,
+    #                     #     datetime.now().minute,
+    #                     #     datetime.now().second, datetime.now().microsecond)
+    #                     # cv2.imwrite('./%s.jpg' % timestamp, img)
+    #                     # print('captured %s image', timestamp)
+    #
+    #                     if USE_POSEESTIMATE is True:
+    #                         img, list_objs_forKIST = demo_all(sess, net, img, '', extMat, FeatureDB, CoorDB, GeoDB)
+    #                     else:
+    #                         demo_all(sess, net, img, '')
+    #                 else:
+    #                     print('no frame\n')
+    #
+    #                 do_capture_success = False
+    #
+    #                 # cv2.imshow('frame', frame)
+    #
+    #                 input_key = cv2.waitKey(10)
+    #
+    #                 if len(list_objs_forKIST) > 0:
+    #                     n_stacked_result = n_stacked_result + 1
+    #
+    #                     if n_stacked_result >= avgwindow:
+    #                         break
+    #
+    #             if input_key == ord('q'):
+    #                 clientSocket.send('2')  # 1 for streamming, 2 for stopping, 3 for one-shot image
+    #                 print('send 2\n')
+    #
+    #                 break
+    #
+    #             # send to kist
+    #             # 4 byte: num of object (int)
+    #             # 1 byte: obj ID (char)
+    #             # 4 * (9 + 3) = 48 bytes = rot + trans mat
+    #             # 4 * 2 = 8 bytes = x, y
+    #
+    #             # # temp - start
+    #             # list_objs_forKIST = []
+    #             # obj_info = {'object': 'Hello', 'score': 100., 'RMat': np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), 'TVec': np.array([[10], [20], [30]]),
+    #             #             'x_center': 100, 'y_center': 200}
+    #             # list_objs_forKIST.append(obj_info)
+    #             # # temp - end
+    #
+    #             msg = 'MMS'
+    #             msg = msg + struct.pack('i', len(list_objs_forKIST))  # int
+    #
+    #             for obj_KIST in list_objs_forKIST:
+    #                 msg = msg + struct.pack('c', obj_KIST['object'][0])
+    #
+    #                 for j_RMat in range(0, 3):
+    #                     for i_RMat in range(0, 3):
+    #                         msg = msg + struct.pack('f', obj_KIST['RMat'][i_RMat][j_RMat])
+    #
+    #                 for j_TVec in range(0, 3):
+    #                     msg = msg + struct.pack('f', obj_KIST['TVec'][j_TVec][0])
+    #
+    #                 msg = msg + struct.pack('i', int(obj_KIST['x_center'])) + struct.pack('i', int(obj_KIST['y_center']))
+    #
+    #             msg = msg + 'MME'
+    #
+    #
+    #             # for list_objs
+    #             KIST_clientSocket.send(msg)
+    #             print('send _%s_ to KIST'%(msg))
 
 
 
