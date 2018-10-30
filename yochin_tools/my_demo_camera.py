@@ -155,7 +155,7 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.tight_layout()
     plt.draw()
 
-def demo_all(sess, snet, im, strEstPathname, stackRmat, stackTvec,extMat=None, FeatureDB=None, CoorDB=None, GeoDB=None):
+def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB=None, GeoDB=None, stackPoseEstResult=None):
     ret_list_forKIST = []
     ret_list_BB = []
 
@@ -188,12 +188,6 @@ def demo_all(sess, snet, im, strEstPathname, stackRmat, stackTvec,extMat=None, F
 
         inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
 
-        # # make the result,
-        # dets[0, :4] = [0, 0, im.shape[1], im.shape[0]]
-        # dets[0, -1] = .99
-        # class_name = 'ace'
-        # inds = [0]
-
         if len(inds) > 0:
             for i in inds:
                 bbox = dets[i, :4]      # [xmin, ymin, xmax, ymax]
@@ -213,9 +207,6 @@ def demo_all(sess, snet, im, strEstPathname, stackRmat, stackTvec,extMat=None, F
                     cv2.putText(im, '{:s} {:.1f}'.format(class_name, score*100), (int(bbox[0]), int(bbox[1] - 2)), fontFace, fontScale, fontColor, thickness = fontThickness)
 
                     ret_list_BB.append({'bbox': bbox, 'score': score, 'name': class_name})
-
-
-                    # print('{:s} {:.3f} {:d}'.format(class_name, score, cls_ind))
 
                     if extMat is not None:
                         t2 = time.time()
@@ -238,15 +229,16 @@ def demo_all(sess, snet, im, strEstPathname, stackRmat, stackTvec,extMat=None, F
 
                         init_coord = np.array([cropbox_lx,  cropbox_ly, 0])    # init_coord[x, y, -], lefttop_point
                         rmat, tvec = PoseEstimate(cropimg, FeatureDB2, CoorDB2, extMat, init_coord)
-                        stackRmat[:,:,0:4] = stackRmat[:,:,1:5]
-                        stackRmat[:,:,4] = rmat
-                        stackTvec[:,:,0:4] = stackTvec[:,:,1:5]  
-                        stackTvec[:,:,4] = tvec
-                        rmat = np.mean(stackRmat,axis=2)
-                        tvec = np.mean(stackTvec,axis=2)
-                        # fid = open('./%s.txt'%timestamp, 'w')
-                        # print >> fid, init_coord, '\n\n', tvec, '\n\n', imgpts, '\n\n', objpts
-                        # fid.close()
+
+
+                        stackPoseEstResult[class_name][0][:,:,0:4] = stackPoseEstResult[class_name][0][:,:,1:5]
+                        stackPoseEstResult[class_name][0][:,:,4] = rmat
+
+                        stackPoseEstResult[class_name][1][:,:,0:4] = stackPoseEstResult[class_name][1][:,:,1:5]
+                        stackPoseEstResult[class_name][1][:,:,4] = tvec
+
+                        rmat = np.mean(stackPoseEstResult[class_name][0],axis=2)
+                        tvec = np.mean(stackPoseEstResult[class_name][1],axis=2)
 
                         elapsed2 = time.time() - t2
                         print('PoseEst: %.3f' % elapsed2)
@@ -354,7 +346,7 @@ def demo_all(sess, snet, im, strEstPathname, stackRmat, stackTvec,extMat=None, F
         cv2.imwrite(strEstPathname + '_est.jpg', im)
         ElementTree(tag_anno).write(strEstPathname)
 
-    return im, ret_list_forKIST, ret_list_BB, stackRmat, stackTvec
+    return im, ret_list_forKIST, ret_list_BB, stackPoseEstResult
 
 def read_list_linebyline(fname):
     with open(fname) as fid:
@@ -465,7 +457,7 @@ def getCamIntParams(nameDevice):
 
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     '''
     Settings
@@ -505,11 +497,8 @@ if __name__ == '__main__':
     # cfg.TEST.MAX_SIZE = 2000
     print(cfg.TEST)
 
-    if INPUT_TYPE == 2:  # Image
-        avgwindow = 1
-    else:
-        avgwindow = 0   # parameter to show pose estimation in stable
-
+    # for pose estimation stability
+    avgwindow = 5
 
     '''
     Write Result
@@ -521,18 +510,11 @@ if __name__ == '__main__':
         outavi = cv2.VideoWriter(name_output_avi, cv2.VideoWriter_fourcc('M','J','P','G'), 15.0, (frame_width, frame_height))
 
 
-    # this is for pose estimation
-    objNum = len(Candidate_CLASSES)
-    DotLog = np.zeros((4, 3, avgwindow, objNum))
-    current = np.zeros((objNum), dtype="int")
-    tvecLog = np.zeros((3, 1, avgwindow, objNum))
-
     FeatureDB = []
     CoorDB = []
     keypointDB = []
     GeoDB = []
-    stackRmat = np.zeros((3,3,5))
-    stackTvec = np.zeros((3,1,5))
+    stackPoseEstResult = {}
     if USE_POSEESTIMATE == True:
         gap = 4
 
@@ -551,6 +533,10 @@ if __name__ == '__main__':
             # strTRSet = os.path.join(basePath, '%s-rotate-geom_00_00_50_400mat.mat'%obj)
             ftr = h5py.File(strTRSet, 'r')
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
+
+            stackPoseEstResult[obj] = [np.zeros((3, 3, 5)), np.zeros((3, 1, 5))]
+            # stackRmat = np.zeros((3, 3, 5))
+            # stackTvec = np.zeros((3, 1, 5))
 
             print('\t%s pose DB is loaded.'%obj)
 
@@ -647,9 +633,9 @@ if __name__ == '__main__':
                 print(current_depth[gmp_iy, gmp_ix])
 
             if USE_POSEESTIMATE is True:
-                im, list_objs_forKIST, ret_list_BB, stackRmat, stackTvec = demo_all(sess, net, np.array(current_color), '',stackRmat, stackTvec, extMat, FeatureDB, CoorDB, GeoDB)
+                im, list_objs_forKIST, ret_list_BB, stackPoseEstResult = demo_all(sess, net, np.array(current_color), '', extMat, FeatureDB, CoorDB, GeoDB, stackPoseEstResult)
             else:
-                im, _, _, stackRmat, stackTvec = demo_all(sess, net, np.array(current_color), '',stackRmat, stackTvec)
+                im, _, _, _ = demo_all(sess, net, np.array(current_color), '')
 
 
 
@@ -675,9 +661,9 @@ if __name__ == '__main__':
                     cv2.imwrite('./debug_img.png', frame)
 
                 if USE_POSEESTIMATE is True:
-                    im, list_objs_forKIST, _, stackRmat, stackTve = demo_all(sess, net, frame, '', stackRmat, stackTvec, extMat, FeatureDB, CoorDB, GeoDB)
+                    im, list_objs_forKIST, _, stackPoseEstResult = demo_all(sess, net, frame, '', extMat, FeatureDB, CoorDB, GeoDB, stackPoseEstResult)
                 else:
-                    im, _, _, stackRmat, stackTve = demo_all(sess, net, frame, '', stackRmat, stackTvec)
+                    im, _, _,_ = demo_all(sess, net, frame, '')
 
                 if DO_WRITE_RESULT_AVI == True:
                     print(im.shape)

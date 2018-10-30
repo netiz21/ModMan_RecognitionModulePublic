@@ -20,7 +20,7 @@ from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
 
 # ModMan module & Pose estimation
-from PoseEst.Function_Pose_v3 import *
+from PoseEst.Function_Pose_v5 import *
 import math
 
 import tensorflow as tf

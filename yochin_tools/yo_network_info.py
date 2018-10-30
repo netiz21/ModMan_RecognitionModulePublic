@@ -1,5 +1,5 @@
-# PATH_BASE = '/home/jang/smallcorgi_Faster-RCNN_TF_yochin'     # for ETRI desktop
-PATH_BASE = '/home/yochin/Faster-RCNN_TF'   # for ETRI yochin-PC
+PATH_BASE = '/home/jang/smallcorgi_Faster-RCNN_TF_yochin'     # for ETRI laptop
+# PATH_BASE = '/home/yochin/Faster-RCNN_TF'   # for ETRI yochin-PC
 # PATH_BASE = '/home/etrimodman/smallcorgi_Faster-RCNN_TF_yochin'   # for ModMan PC
 
 '''
