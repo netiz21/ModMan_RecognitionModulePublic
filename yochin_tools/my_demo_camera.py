@@ -117,6 +117,37 @@ class ThreadedVideoCapture(object):
 
         return self.ret, ret_image
 
+class stackRmatTvec(object):
+    def __init__(self, len_stack=5):
+        self.len_stack = len_stack
+        self.stackRmat = np.empty((3, 3, self.len_stack))
+        self.stackTvec = np.empty((3, 1, self.len_stack))
+        self.stackRmat[:] = np.nan
+        self.stackTvec[:] = np.nan
+        self.last_Tvec = np.zeros((3, 1))
+
+    def push_pop(self, Rmat, Tvec):
+        if self.len_stack == 1:
+            return Rmat, Tvec
+        else:
+            if np.linalg.norm(self.last_Tvec - Tvec) > 100:     # mm
+                self.stackRmat = np.empty((3, 3, self.len_stack))
+                self.stackTvec = np.empty((3, 1, self.len_stack))
+                self.stackRmat[:] = np.nan
+                self.stackTvec[:] = np.nan
+
+            self.stackRmat[:,:,0:self.len_stack-1] = self.stackRmat[:,:,1:self.len_stack]
+            self.stackTvec[:,:,0:self.len_stack-1] = self.stackTvec[:,:,1:self.len_stack]
+
+            self.stackRmat[:,:,-1] = Rmat
+            self.stackTvec[:,:,-1] = Tvec
+
+            res_Rmat = np.nanmean(self.stackRmat, axis=2)
+            res_Tvec = np.nanmean(self.stackTvec, axis=2)
+
+            self.last_Tvec = res_Tvec
+
+            return res_Rmat, res_Tvec
 
 
 def vis_detections(im, class_name, dets, thresh=0.5):
@@ -230,15 +261,8 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
                         init_coord = np.array([cropbox_lx,  cropbox_ly, 0])    # init_coord[x, y, -], lefttop_point
                         rmat, tvec = PoseEstimate(cropimg, FeatureDB2, CoorDB2, extMat, init_coord)
 
-
-                        stackPoseEstResult[class_name][0][:,:,0:4] = stackPoseEstResult[class_name][0][:,:,1:5]
-                        stackPoseEstResult[class_name][0][:,:,4] = rmat
-
-                        stackPoseEstResult[class_name][1][:,:,0:4] = stackPoseEstResult[class_name][1][:,:,1:5]
-                        stackPoseEstResult[class_name][1][:,:,4] = tvec
-
-                        rmat = np.mean(stackPoseEstResult[class_name][0],axis=2)
-                        tvec = np.mean(stackPoseEstResult[class_name][1],axis=2)
+                        # rmat & tvec
+                        rmat, tvec = stackPoseEstResult[class_name].push_pop(rmat, tvec)
 
                         elapsed2 = time.time() - t2
                         print('PoseEst: %.3f' % elapsed2)
@@ -516,12 +540,18 @@ if __name__ == '__main__':
     GeoDB = []
     stackPoseEstResult = {}
     if USE_POSEESTIMATE == True:
-        gap = 4
+        num_max_ftr = 20000
 
         for ith, obj in enumerate(Candidate_CLASSES):
             temp_FeatureDB, temp_CoorDB, temp_keypointDB = ReadDB(obj)
-            FeatureDB.append(temp_FeatureDB[::gap,:])
-            CoorDB.append(temp_CoorDB[::gap,:])
+
+            index_ftr = np.linspace(start=0, stop=temp_FeatureDB.shape[0]-1, num=min(num_max_ftr, temp_FeatureDB.shape[0]))
+            # index_ftr = np.arange(0, temp_FeatureDB.shape[0], 4)
+            index_ftr = index_ftr.astype('int')
+
+
+            FeatureDB.append(temp_FeatureDB[index_ftr,:])
+            CoorDB.append(temp_CoorDB[index_ftr,:])
             # keypointDB.extend(temp_keypointDB)
 
             # read plotting information of the object
@@ -534,11 +564,9 @@ if __name__ == '__main__':
             ftr = h5py.File(strTRSet, 'r')
             GeoDB.append(np.transpose(np.array(ftr['img']), [2, 1, 0]))
 
-            stackPoseEstResult[obj] = [np.zeros((3, 3, 5)), np.zeros((3, 1, 5))]
-            # stackRmat = np.zeros((3, 3, 5))
-            # stackTvec = np.zeros((3, 1, 5))
+            stackPoseEstResult[obj] = stackRmatTvec(len_stack=avgwindow)
 
-            print('\t%s pose DB is loaded.'%obj)
+            print('\t%s pose DB is loaded (%s -> %s).'%(obj, temp_FeatureDB.shape, temp_FeatureDB[index_ftr,:].shape))
 
     if INPUT_TYPE == 0:
         for i_temp in range(0, 10):
