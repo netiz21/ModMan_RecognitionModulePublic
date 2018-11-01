@@ -198,6 +198,9 @@ For running the recognition module, GPU memory is needed.
       sudo bash
       source activate ModMan
       ```
+      
+      If you meet an message, "ImportError: ~~/~~.so: undefined symbol: PyFPE_jbuf", then delete the .so file and make again in step 4.
+
 
 ### Update
 The updated code will be uploaded on [git server](https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git).
