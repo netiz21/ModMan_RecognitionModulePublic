@@ -114,7 +114,13 @@ For running the recognition module, GPU memory is needed.
 
       ```Shell
       source activate ModMan
-      conda install -c anaconda cython
+      conda install -c anaconda cython```Shell
+      pip install pyyaml
+      conda install -c auto easydict
+      conda install -c auto scipy
+      conda install -c conda-forge hdf5
+      conda install -c auto matplotlib
+      conda install -c anaconda h5py
       ```
 
 5. Download trained model
@@ -188,20 +194,6 @@ For running the recognition module, GPU memory is needed.
       sudo bash
       source activate ModMan
       ```
-
-### Errors
-If you meet a error message like 'import module error ###', then install that module using one of below commands.
-
-```Shell
-source activate ModMan
-
-pip install pyyaml
-conda install -c auto easydict
-conda install -c auto scipy
-conda install -c conda-forge hdf5
-conda install -c auto matplotlib
-conda install -c anaconda h5py
-```
 
 ### Update
 The updated code will be uploaded on [git server](https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git).
