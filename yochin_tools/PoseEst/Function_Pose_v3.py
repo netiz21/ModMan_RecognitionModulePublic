@@ -129,7 +129,7 @@ def PoseEstimate(img, FeatureDB, CoorDB, ret, init_coord):      #image, left_upp
             tvec = np.zeros((3, 1))
     except:
         print('\texcept error')
-        print('\tcheck now you use opencv ver: %s'%cv2.__version__)
+        print('\tcheck now you use opencv ver: %s == 3.2.x'%cv2.__version__)
         rmat = np.zeros((3, 3))
         tvec = np.zeros((3, 1))
 

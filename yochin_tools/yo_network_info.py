@@ -1,5 +1,5 @@
-PATH_BASE = '/home/jang/smallcorgi_Faster-RCNN_TF_yochin'     # for ETRI laptop
-# PATH_BASE = '/home/yochin/Faster-RCNN_TF'   # for ETRI yochin-PC
+# PATH_BASE = '/home/jang/smallcorgi_Faster-RCNN_TF_yochin'     # for ETRI laptop
+PATH_BASE = '/home/yochin/Faster-RCNN_TF'   # for ETRI yochin-PC
 # PATH_BASE = '/home/etrimodman/smallcorgi_Faster-RCNN_TF_yochin'   # for ModMan PC
 
 '''
@@ -62,17 +62,17 @@ network
 # ETRI_STATIC_IP = '192.168.137.3'
 # SERVER_IP = '192.168.137.50'        # '129.254.87.77'
 
-# # ETRI - using Internet
-# KIST_STATIC_IP = '129.254.87.77'
-# ETRI_STATIC_IP = '129.254.87.77'
-# SERVER_IP = '129.254.87.77'
-# SERVER_PORT = 8020
-
-# ETRI - using local connection
-KIST_STATIC_IP = '192.168.0.50'
-ETRI_STATIC_IP = '192.168.0.50'
-SERVER_IP = '192.168.0.50'
+# ETRI - using Internet
+KIST_STATIC_IP = '129.254.87.77'
+ETRI_STATIC_IP = '129.254.87.77'
+SERVER_IP = '129.254.87.77'
 SERVER_PORT = 8020
+
+# # ETRI - using local connection
+# KIST_STATIC_IP = '192.168.0.50'
+# ETRI_STATIC_IP = '192.168.0.50'
+# SERVER_IP = '192.168.0.50'
+# SERVER_PORT = 8020
 
 LEN_CHUNK = 10240                       # if the server cannot receive all data, then reduce the # of LEN_CHUNK.
 
