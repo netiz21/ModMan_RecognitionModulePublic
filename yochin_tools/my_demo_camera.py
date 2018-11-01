@@ -360,7 +360,7 @@ def demo_all(sess, snet, im, strEstPathname, extMat=None, FeatureDB=None, CoorDB
     print('Drawing: %.3f' % elapsed)
 
     t = time.time()
-    cv2.namedWindow('display', cv2.WINDOW_KEEPRATIO)
+    # cv2.namedWindow('display', cv2.WINDOW_KEEPRATIO)
     cv2.imshow('display', im)
     cv2.waitKey(10)
     elapsed = time.time() - t
@@ -540,7 +540,7 @@ if __name__ == '__main__':
     GeoDB = []
     stackPoseEstResult = {}
     if USE_POSEESTIMATE == True:
-        num_max_ftr = 20000
+        num_max_ftr = 40000
 
         for ith, obj in enumerate(Candidate_CLASSES):
             temp_FeatureDB, temp_CoorDB, temp_keypointDB = ReadDB(obj)
