@@ -72,6 +72,16 @@ For running the recognition module, GPU memory is needed.
 
     ```Shell
     conda env create -f ModMan_env.yml
+    ```      
+    ```Shell
+    source activate ModMan
+    conda install -c anaconda cython
+    pip install pyyaml
+    conda install -c auto easydict
+    conda install -c auto scipy
+    conda install -c conda-forge hdf5
+    conda install -c auto matplotlib
+    conda install -c anaconda h5py
     ```
 
 4. Download and compile Faster-RCNN_TF based ModMan recognition module
@@ -131,31 +141,23 @@ For running the recognition module, GPU memory is needed.
 
     In $FRCN/yochin_tools/yo_network_info.py, change the variable PATH_BASE to become the real path to $FRCN.
 
-    In $FRCN/yochin_tools/my_demo_tf_wPoseEst_conSKKUKIST.py (this is the main code), edit followings.
+    In $FRCN/yochin_tools/my_demo_camera.py (this is the main code), edit followings.
 
-    If you don't want to use realsense, then comment line 41.
+    If you don't want to use realsense, then comment line 44.
 
     ```Shell
     # import pyrealsense as pyrs
     ```
 
-    * If you use the program as a server (receiving images from the client PC), then
-
-      In line 449, INPUT_TYPE = 5
-
-      In line 459, extMat = getCamIntParams('client')
-
-      In line 458 and 459, AR_IP(IP address) and AR_PORT(port number) should be set.
-
     * If you use the program as a standalone program using web camera,
 
-      In line 449, INPUT_TYPE = 0
+      In line 489, INPUT_TYPE = 0
 
-      In line 459, extMat = getCamIntParams('') <-- select the proper camera name.
+      In line 497, extMat = getCamIntParams('') <-- select the proper camera name.
 
     * If you set all parameters, then run the program.
       ```Shell
-      python my_demo_tf_wPoseEst_conSKKUKIST.py
+      python my_demo_camera.py
       ```
 
 7. Set paths and run the program (as a server)
@@ -188,20 +190,9 @@ For running the recognition module, GPU memory is needed.
       sudo bash
       source activate ModMan
       ```
+      
+      If you meet an message, "ImportError: ~~/~~.so: undefined symbol: PyFPE_jbuf", then delete the .so file and make again in step 4.
 
-### Errors
-If you meet a error message like 'import module error ###', then install that module using one of below commands.
-
-```Shell
-source activate ModMan
-
-pip install pyyaml
-conda install -c auto easydict
-conda install -c auto scipy
-conda install -c conda-forge hdf5
-conda install -c auto matplotlib
-conda install -c anaconda h5py
-```
 
 ### Update
 The updated code will be uploaded on [git server](https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git).
