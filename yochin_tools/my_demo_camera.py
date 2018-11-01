@@ -569,13 +569,17 @@ if __name__ == '__main__':
             print('\t%s pose DB is loaded (%s -> %s).'%(obj, temp_FeatureDB.shape, temp_FeatureDB[index_ftr,:].shape))
 
     if INPUT_TYPE == 0:
-        for i_temp in range(0, 10):
+        for i_temp in range(0, 5):
             cap = cv2.VideoCapture(i_temp)
             if cap.isOpened() == True:
                 print('camera %d is openned with %d x %d'%(i_temp, cap.get(3), cap.get(4)))
                 break
         # cap.set(3, 640*2)
         # cap.set(4, 480*2)
+
+        if cap.isOpened() == False:
+            print('Camera is not connected or opencv is not installed properly.')
+            exit()
 
         threadCamera = ThreadedVideoCapture(cam_id=i_temp)
 
