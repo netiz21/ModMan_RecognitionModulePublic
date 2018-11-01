@@ -114,7 +114,7 @@ For running the recognition module, GPU memory is needed.
 
       ```Shell
       source activate ModMan
-      conda install -c anaconda cython```Shell
+      conda install -c anaconda cython
       pip install pyyaml
       conda install -c auto easydict
       conda install -c auto scipy
