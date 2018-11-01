@@ -141,31 +141,23 @@ For running the recognition module, GPU memory is needed.
 
     In $FRCN/yochin_tools/yo_network_info.py, change the variable PATH_BASE to become the real path to $FRCN.
 
-    In $FRCN/yochin_tools/my_demo_tf_wPoseEst_conSKKUKIST.py (this is the main code), edit followings.
+    In $FRCN/yochin_tools/my_demo_camera.py (this is the main code), edit followings.
 
-    If you don't want to use realsense, then comment line 41.
+    If you don't want to use realsense, then comment line 44.
 
     ```Shell
     # import pyrealsense as pyrs
     ```
 
-    * If you use the program as a server (receiving images from the client PC), then
-
-      In line 449, INPUT_TYPE = 5
-
-      In line 459, extMat = getCamIntParams('client')
-
-      In line 458 and 459, AR_IP(IP address) and AR_PORT(port number) should be set.
-
     * If you use the program as a standalone program using web camera,
 
-      In line 449, INPUT_TYPE = 0
+      In line 489, INPUT_TYPE = 0
 
-      In line 459, extMat = getCamIntParams('') <-- select the proper camera name.
+      In line 497, extMat = getCamIntParams('') <-- select the proper camera name.
 
     * If you set all parameters, then run the program.
       ```Shell
-      python my_demo_tf_wPoseEst_conSKKUKIST.py
+      python my_demo_camera.py
       ```
 
 7. Set paths and run the program (as a server)
