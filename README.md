@@ -72,6 +72,16 @@ For running the recognition module, GPU memory is needed.
 
     ```Shell
     conda env create -f ModMan_env.yml
+    ```      
+    ```Shell
+    source activate ModMan
+    conda install -c anaconda cython
+    pip install pyyaml
+    conda install -c auto easydict
+    conda install -c auto scipy
+    conda install -c conda-forge hdf5
+    conda install -c auto matplotlib
+    conda install -c anaconda h5py
     ```
 
 4. Download and compile Faster-RCNN_TF based ModMan recognition module
@@ -115,12 +125,6 @@ For running the recognition module, GPU memory is needed.
       ```Shell
       source activate ModMan
       conda install -c anaconda cython
-      pip install pyyaml
-      conda install -c auto easydict
-      conda install -c auto scipy
-      conda install -c conda-forge hdf5
-      conda install -c auto matplotlib
-      conda install -c anaconda h5py
       ```
 
 5. Download trained model
