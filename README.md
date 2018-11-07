@@ -7,7 +7,7 @@ Pose estimation part is composed of SURF-based feature matching and PnPSolver us
 
 Additional parts such as various input modules (web camera, Intel realsense, images and videos) and communication modules are added to the main code.
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/YOUTUBE_VIDEO_ID_HERE/0.jpg)](https://drive.google.com/open?id=1UMKngOk2a8wTrQjd8VqpHrpoqmRA5T59 "Video Title")
+[![Demo](https://drive.google.com/open?id=11-VsjrjbfVZGuUxUjFBjIqKgdRiiPA9a)](https://drive.google.com/open?id=1UMKngOk2a8wTrQjd8VqpHrpoqmRA5T59 "Demo")
 
 ### Requirements: hardware
 
