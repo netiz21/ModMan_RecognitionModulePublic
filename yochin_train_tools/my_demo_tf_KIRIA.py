@@ -3,8 +3,8 @@
 
 import os
 import sys
-import yo_network_info
-sys.path.append(os.path.join(yo_network_info.PATH_BASE, 'lib'))
+import yochin_tools.yo_network_info
+sys.path.append(os.path.join(yochin_tools.yo_network_info.PATH_BASE, 'lib'))
 
 from networks.factory import get_network
 from fast_rcnn.config import cfg
@@ -29,8 +29,8 @@ CONF_THRESH = 0.6
 NMS_THRESH = 0.3
 
 # for DBv7
-CLASSES = yo_network_info.CLASSES
-Candidate_CLASSES = yo_network_info.Candidate_CLASSES
+CLASSES = yochin_tools.yo_network_info.CLASSES
+Candidate_CLASSES = yochin_tools.yo_network_info.Candidate_CLASSES
 
 # Candidate_CLASSES = ('Ace', 'Apple', 'Champion', 'Cheezit', 'Chiffon',
 #                     'Chococo', 'Crayola', 'Cup', 'Drill', 'Expo',
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     # cfg.TRAIN.IMS_PER_BATCH: 2
 
     # for test
-    cfg.NCLASSES = yo_network_info.NUM_CLASSES
+    cfg.NCLASSES = yochin_tools.yo_network_info.NUM_CLASSES
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
     cfg.TEST.BBOX_REG = True   # Use BBox regressor
     cfg.TEST.SCALES = (600, )     # only one for test

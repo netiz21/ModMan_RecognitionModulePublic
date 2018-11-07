@@ -3,8 +3,7 @@
 
 import os
 import sys
-import struct
-import copy
+
 sys.path.append('/home/yochin/Faster-RCNN_TF/lib')
 # sys.path.append('/usr/lib/python2.7/dist-packages')
 
@@ -18,20 +17,17 @@ import tensorflow as tf
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
-import random
-from xml.etree.ElementTree import Element, dump, SubElement, ElementTree
-from datetime import datetime
+from xml.etree.ElementTree import Element, SubElement, ElementTree
 
-import yo_network_info  # including info of net (class_name, num_classes)
+import yochin_tools.yo_network_info  # including info of net (class_name, num_classes)
 # sys.path.append('/home/yochin/Faster-RCNN_TF/yochin_tools/Cal_mAP')
-import Cal_mAP.check_mAP_V2 as check_mAP_V2
+import yochin_train_tools.Cal_mAP.check_mAP_V2 as check_mAP_V2
 
 CONF_THRESH = 0.6
 NMS_THRESH = 0.3
 
-CLASSES = yo_network_info.CLASSES
-NUM_CLASSES = yo_network_info.NUM_CLASSES
+CLASSES = yochin_tools.yo_network_info.CLASSES
+NUM_CLASSES = yochin_tools.yo_network_info.NUM_CLASSES
 
 def list_files(path, ext):
     filelist = []
@@ -232,7 +228,7 @@ if __name__ == '__main__':
             demo_all(sess, net, im, os.path.join(strPathResult, filename + '_est.xml'))
             # cv2.waitKey(0)
 
-    check_mAP_V2.check_mAP(CLASSES[1:]+('orange',), strListfilePath, strGndFolder, strPathResult, strPathResultSummary, False)
+    check_mAP_V2.check_mAP(CLASSES[1:] + ('orange',), strListfilePath, strGndFolder, strPathResult, strPathResultSummary, False)
     # check_mAP_V2.check_mAP(CLASSES[1:]+('strawberry', 'papermate', 'highland', 'genuine', 'mark', 'expo', 'champion', 'apple', 'cup', 'banana', 'chiffon', 'crayola', 'scissors', 'tomatosoup', 'drill', 'waffle', 'ace', 'moncher', 'chococo', 'orange',), strListfilePath, strGndFolder, strPathResult, strPathResultSummary, False)
-    check_mAP_V2.check_mAP(CLASSES[1:]+('orange',), strListfilePath, strGndFolder, strPathResult,
+    check_mAP_V2.check_mAP(CLASSES[1:] + ('orange',), strListfilePath, strGndFolder, strPathResult,
                            strPathResultSummary, False, check_only_recog = True)
