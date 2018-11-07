@@ -8,6 +8,7 @@ Pose estimation part is composed of SURF-based feature matching and PnPSolver us
 Additional parts such as various input modules (web camera, Intel realsense, images and videos) and communication modules are added to the main code.
 
 [![Watch the video](https://raw.githubusercontent.com/yochin/ModMan_RecognitionModulePublic/master/yochin_tools/cover_image.PNG)](https://drive.google.com/file/d/11-VsjrjbfVZGuUxUjFBjIqKgdRiiPA9a/view?usp=sharing)
+[Click to watch the video](https://drive.google.com/file/d/11-VsjrjbfVZGuUxUjFBjIqKgdRiiPA9a/view?usp=sharing)
 
 ### Requirements: hardware
 
