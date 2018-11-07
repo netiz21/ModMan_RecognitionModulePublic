@@ -3,9 +3,11 @@
 This is an object detection and pose estimation module in Modular Manipulation Project.
 
 The object detection part is mainly based on the [Faster-RCNN_TF](https://github.com/smallcorgi/Faster-RCNN_TF) that refers to the paper [Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks](http://arxiv.org/pdf/1506.01497v3.pdf) by Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun.
-Pose estimation part is composed of SURF-based feature matching and PnPSolver using [OpenCV](https://opencv.org/)
+Pose estimation part is composed of SURF-based feature matching and PnPSolver using [OpenCV](https://opencv.org/).
 
 Additional parts such as various input modules (web camera, Intel realsense, images and videos) and communication modules are added to the main code.
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/YOUTUBE_VIDEO_ID_HERE/0.jpg)](https://drive.google.com/open?id=1UMKngOk2a8wTrQjd8VqpHrpoqmRA5T59 "Video Title")
 
 ### Requirements: hardware
 
