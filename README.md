@@ -9,6 +9,8 @@ Additional parts such as various input modules (web camera, Intel realsense, ima
 
 [![Demo](https://raw.githubusercontent.com/yochin/ModMan_RecognitionModulePublic/master/yochin_tools/cover_image.PNG)](https://drive.google.com/file/d/11-VsjrjbfVZGuUxUjFBjIqKgdRiiPA9a/view?usp=sharing)
 
+[![Watch the video](https://i.imgur.com/vKb2F1B.png)](https://youtu.be/vt5fpE0bzSY)
+
 ### Requirements: hardware
 
 For running the recognition module, GPU memory is needed.
