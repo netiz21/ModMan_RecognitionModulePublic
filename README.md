@@ -201,6 +201,7 @@ For running the recognition module, GPU memory is needed.
 The updated code will be uploaded on [git server](https://github.com/yochin/smallcorgi_Faster-RCNN_TF_yochin.git).
 
 ###References
+
 [Faster R-CNN caffe version](https://github.com/rbgirshick/py-faster-rcnn)
 
 [A tensorflow implementation of SubCNN (working progress)](https://github.com/yuxng/SubCNN_TF)
