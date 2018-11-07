@@ -9,6 +9,8 @@ Additional parts such as various input modules (web camera, Intel realsense, ima
 
 [![Demo](https://drive.google.com/file/d/11-VsjrjbfVZGuUxUjFBjIqKgdRiiPA9a/view?usp=sharing)](https://drive.google.com/file/d/11-VsjrjbfVZGuUxUjFBjIqKgdRiiPA9a/view?usp=sharing "Demo")
 
+[![Watch the video](https://i.imgur.com/vKb2F1B.png)](https://youtu.be/vt5fpE0bzSY)
+
 ### Requirements: hardware
 
 For running the recognition module, GPU memory is needed.
